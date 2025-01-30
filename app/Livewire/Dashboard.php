@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Servicio;
 use Livewire\Component;
 use Illuminate\Support\Arr;
 use Carbon\Carbon;
@@ -17,6 +18,7 @@ class Dashboard extends Component
     public int $totalUsers = 0;
     public int $totalRoles = 0;
     public int $totalPermissions = 0;
+    public int $totalServices = 0;
     public int $usersTodayCount = 0;
 
     // Últimos usuarios registrados hoy
@@ -55,6 +57,7 @@ class Dashboard extends Component
         $this->totalUsers       = User::count();
         $this->totalRoles       = Role::count();
         $this->totalPermissions = Permission::count();
+        $this->totalServices = Servicio::count();
 
         // 2. Cantidad de usuarios registrados hoy
         $today = Carbon::today();

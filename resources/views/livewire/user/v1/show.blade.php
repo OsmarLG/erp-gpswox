@@ -2,7 +2,7 @@
     {{-- Encabezado del Perfil --}}
     {{ $path = implode(' / ', array_map('ucfirst', explode('/', request()->path()))) }}
 
-    <h2 class="text-2xl font-bold text-center mb-6">Perfil de {{ $user->name }}</h2>
+    <h2 class="text-2xl font-bold text-center mb-6">Perfil de {{ $user->name . ' ' . $user->apellidos }}</h2>
 
     {{-- Header con Avatar e info básica --}}
     <div class="flex items-center space-x-4 mb-6">
@@ -34,9 +34,19 @@
         <x-tab name="info-tab" label="Info Personal" icon="o-user">
             <div class="mt-4">
                 <x-card title="Información Personal">
-                    <p><strong>Nombre:</strong> {{ $user->name }}</p>
+                    <p><strong>Nombre:</strong> {{ $user->name . ' ' . $user->apellidos }}</p>
                     <p><strong>Username:</strong> {{ $user->username }}</p>
                     <p><strong>Email:</strong> {{ $user->email }}</p>
+                    <p><strong>Fecha de Nacimiento:</strong> {{ $user->fecha_nacimiento->format('d-m-Y') }}</p>
+                    <p><strong>Edad:</strong> {{ $user->edad . ' años' }}</p>
+                    @if (Auth::user()->hasRole('operador'))
+                        <p><strong>Celular 1:</strong> {{ $user->celular1 }}</p>
+                        <p><strong>Celular 2:</strong> {{ $user->celular2 }}</p>
+                        <p><strong>Teléfono de Casa:</strong> {{ $user->telefono_casa }}</p>
+                        <p><strong>Contacto con quien vive:</strong> {{ $user->nombre_contacto_con_quien_vive }}</p>
+                        <p><strong>CP Domicilio:</strong> {{ $user->cp_domicilio }}</p>
+                        <p><strong>Dirección:</strong> {{ $user->direccion_domicilio }}</p>
+                    @endif
                 </x-card>
             </div>
         </x-tab>
@@ -101,5 +111,134 @@
                 </x-card>
             </div>
         </x-tab>
+
+        {{-- Tab: Fotos/Documentos (sólo si es operador) --}}
+        @if ($user->hasRole('operador'))
+            <x-tab name="docs-tab" label="Documentos" icon="o-photo">
+                <div class="mt-4">
+                    <x-card title="Documentos / Imágenes">
+                        {{-- Grid con imágenes solo lectura --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                            {{-- INE Frontal --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">INE (Frontal)</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->ine_frontal ? asset('storage/' . $user->ine_frontal) : asset('storage/user.png') }}"
+                                        alt="INE Frontal" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->ine_frontal ? asset('storage/' . $user->ine_frontal) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- INE Reverso --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">INE (Reverso)</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->ine_reverso ? asset('storage/' . $user->ine_reverso) : asset('storage/user.png') }}"
+                                        alt="INE Reverso" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->ine_reverso ? asset('storage/' . $user->ine_reverso) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Licencia Frontal --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">Licencia (Frontal)</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->licencia_frontal ? asset('storage/' . $user->licencia_frontal) : asset('storage/user.png') }}"
+                                        alt="Licencia Frontal" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->licencia_frontal ? asset('storage/' . $user->licencia_frontal) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Licencia Reverso --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">Licencia (Reverso)</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->licencia_reverso ? asset('storage/' . $user->licencia_reverso) : asset('storage/user.png') }}"
+                                        alt="Licencia Reverso" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->licencia_reverso ? asset('storage/' . $user->licencia_reverso) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Comprobante de Domicilio --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">Comprobante de Domicilio</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->comprobante_domicilio ? asset('storage/' . $user->comprobante_domicilio) : asset('storage/user.png') }}"
+                                        alt="Comprobante de Domicilio" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->comprobante_domicilio ? asset('storage/' . $user->comprobante_domicilio) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Foto Fachada --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">Foto de Fachada</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->foto_fachada ? asset('storage/' . $user->foto_fachada) : asset('storage/user.png') }}"
+                                        alt="Foto Fachada" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->foto_fachada ? asset('storage/' . $user->foto_fachada) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Foto Estacionamiento --}}
+                            <div class="flex flex-col items-center">
+                                <p class="font-semibold mb-2">Foto Estacionamiento</p>
+                                <div class="relative w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                    <img src="{{ $user->foto_estacionamiento ? asset('storage/' . $user->foto_estacionamiento) : asset('storage/user.png') }}"
+                                        alt="Foto Estacionamiento" class="w-full h-full object-cover rounded-lg" />
+                                    <div class="absolute bottom-2 right-2">
+                                        <x-button label="Ver" icon="o-eye" class="btn-sm"
+                                            wire:click="openViewImageModal(
+                                                '{{ $user->foto_estacionamiento ? asset('storage/' . $user->foto_estacionamiento) : asset('storage/user.png') }}'
+                                            )" />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>{{-- end grid --}}
+                    </x-card>
+                </div>
+            </x-tab>
+        @endif
     </x-tabs>
+
+    <!-- Modal para ver imagen en pantalla completa -->
+    <x-modal wire:model="viewImageModal" max-width="full" class="!max-w-full !h-screen !rounded-none p-0">
+        <div class="relative w-full h-full flex items-center justify-center bg-black bg-opacity-90">
+            @if ($viewImageModalUrl)
+                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa"
+                    class="max-w-full max-h-full object-contain" />
+            @endif
+        </div>
+    </x-modal>
 </div>

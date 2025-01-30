@@ -28,6 +28,6 @@ class AppServiceProvider extends ServiceProvider
             return Route::get($path, $handle)->middleware('web');
         });
         URL::forceRootUrl(config('app.url'));
-        URL::forceScheme(config('app.scheme', 'http'));
+        // URL::forceScheme(config('app.scheme', 'http'));
     }
 }

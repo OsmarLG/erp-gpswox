@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Carbon\Carbon;
 
 class User extends Authenticatable
 {
@@ -20,10 +21,26 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'email',
+        'apellidos',
         'username',
+        'email',
         'avatar',
         'password',
+        'fecha_nacimiento',
+        'celular1',
+        'celular2',
+        'telefono_casa',
+        'nombre_contacto_con_quien_vive',
+        'ine_frontal',
+        'ine_reverso',
+        'licencia_frontal',
+        'licencia_reverso',
+        'cp_domicilio',
+        'direccion_domicilio',
+        'comprobante_domicilio',
+        'ubicacion_domicilio',
+        'foto_fachada',
+        'foto_estacionamiento',
     ];
 
     /**
@@ -46,6 +63,19 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'fecha_nacimiento' => 'date',
         ];
+    }
+
+    /**
+     * Accessor para la edad (calculada)
+     */
+    public function getEdadAttribute()
+    {
+        if (! $this->fecha_nacimiento) {
+            return null;
+        }
+
+        return Carbon::parse($this->fecha_nacimiento)->age;
     }
 }

@@ -105,6 +105,9 @@
                             <x-menu-item title="Archives" icon="o-archive-box" link="####" />
                         </x-menu-sub>
                     @endif --}}
+                    @if ($user->hasPermissionTo('view_menu_servicio'))
+                        <x-menu-item title="Servicios" icon="o-wrench" link="{{ route('servicios.index') }}" />
+                    @endif
                     @if ($user->hasPermissionTo('view_menu_users'))
                         <x-menu-sub title="Users" icon="o-users">
                             @if ($user->hasPermissionTo('view_any_user'))

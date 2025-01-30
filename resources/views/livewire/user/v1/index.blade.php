@@ -48,6 +48,14 @@
             <x-badge :value="$user->name" class="badge-primary" />
         @endscope
 
+        @scope('cell_fecha_nacimiento', $user)
+            <x-badge :value="$user->fecha_nacimiento->format('d-m-Y')" />
+        @endscope
+
+        @scope('cell_edad', $user)
+            <x-badge :value="$user->edad . ' años'" />
+        @endscope
+
         @scope('cell_roles', $user)
             <div class="flex flex-wrap gap-1">
                 @foreach ($user->roles as $role)
@@ -73,8 +81,10 @@
     {{-- Modal para crear roles --}}
     <x-modal wire:model="create_user_modal" title="Crear Usuario" subtitle="Añade un nuevo Usuario" separator>
         <x-form wire:submit.prevent="createUser">
-            <x-input label="Nombre Completo" placeholder="Tú nombre" icon="o-user" hint="Tú Nombre Completo"
-                wire:model="userName" required />
+            <x-input label="Nombre" placeholder="Tú nombre" icon="o-user" hint="Tú Nombre" wire:model="userName"
+                required />
+            <x-input label="Apellidos" placeholder="Tus Apelldios" icon="o-user" hint="Tu Apellido"
+                wire:model="userLastName" required />
             <x-input label="Username" wire:model="userUsername" required placeholder="Tú Nombre de Usuario"
                 icon="o-user" hint="Tú Usuario" />
             <x-input label="Email" wire:model="userEmail" type="email" required placeholder="Tú Correo"
@@ -104,8 +114,11 @@
     <x-modal wire:model="edit_user_modal" title="Editar Usuario" subtitle="Actualiza un Usuario existente" separator>
         <x-form wire:submit.prevent="updateUser">
             <x-input label="Nombre Completo" placeholder="Tú nombre" icon="o-user" hint="Tú Nombre Completo"
-                wire:model="userName" required /> <x-input label="Username" wire:model="userUsername" required
-                placeholder="Tú Nombre de Usuario" icon="o-user" hint="Tú Usuario" />
+                wire:model="userName" required />
+            <x-input label="Apellidos" placeholder="Tus Apelldios" icon="o-user" hint="Tu Apellido"
+                wire:model="userLastName" />
+            <x-input label="Username" wire:model="userUsername" required placeholder="Tú Nombre de Usuario"
+                icon="o-user" hint="Tú Usuario" />
             <x-input label="Email" wire:model="userEmail" type="email" required placeholder="Tú Correo"
                 icon="o-envelope" hint="Tú Nombre de Correo" />
             <x-password label="Contraseña" wire:model="userPassword" type="password" placeholder="Contraseña segura"

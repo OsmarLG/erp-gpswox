@@ -22,6 +22,7 @@ class Index extends Component
     // Campos para crear/editar
     public ?int $editing_user_id = null;
     public string $userName = '';
+    public string $userLastName = '';
     public string $userEmail = '';
     public string $userUsername = '';
     public string $userPassword = '';
@@ -41,8 +42,11 @@ class Index extends Component
     public array $headers = [
         ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
         ['key' => 'avatar', 'label' => 'Avatar', 'class' => 'w-1'],
-        ['key' => 'name', 'label' => 'Nombre del Usuario', 'class' => 'text-black dark:text-white'],
+        ['key' => 'name', 'label' => 'Nombre', 'class' => 'text-black dark:text-white'],
+        ['key' => 'apellidos', 'label' => 'Apellido', 'class' => 'text-black dark:text-white'],
         ['key' => 'username', 'label' => 'Username', 'class' => 'text-black dark:text-white'],
+        ['key' => 'fecha_nacimiento', 'label' => 'Fecha de Nacimiento', 'class' => 'text-black dark:text-white'],
+        ['key' => 'edad', 'label' => 'Edad', 'class' => 'text-black dark:text-white'],
         ['key' => 'email', 'label' => 'Email', 'class' => 'text-black dark:text-white'],
         ['key' => 'roles', 'label' => 'Roles', 'class' => 'text-black dark:text-white'],
     ];
@@ -87,6 +91,7 @@ class Index extends Component
     {
         $this->reset([
             'userName',
+            'userLastName',
             'userEmail',
             'userUsername',
             'userPassword',
@@ -104,6 +109,7 @@ class Index extends Component
     {
         $this->validate([
             'userName'     => 'required|string',
+            'userLastName'     => 'required|string',
             'userUsername'    => 'required|string|unique:users,username',
             'userEmail'    => 'required|email|unique:users,email',
             'userPassword' => 'required|min:6|confirmed',
@@ -113,6 +119,7 @@ class Index extends Component
         // Creamos el usuario
         $user = User::create([
             'name'     => $this->userName,
+            'apellidos'     => $this->userLastName,
             'username'    => $this->userUsername,
             'email'    => $this->userEmail,
             'password' => Hash::make($this->userPassword),
@@ -135,6 +142,7 @@ class Index extends Component
             $this->reset([
                 'create_user_modal',
                 'userName',
+                'userLastName',
                 'userUsername',
                 'userEmail',
                 'userPassword',
@@ -143,7 +151,7 @@ class Index extends Component
                 'selectedPermissions'
             ]);
         } else {
-            $this->reset(['userName', 'userUsername', 'userEmail', 'userPassword', 'userPassword_confirmation', 'selectedRoles', 'selectedPermissions']);
+            $this->reset(['userName', 'userUsername', 'userLastName', 'userEmail', 'userPassword', 'userPassword_confirmation', 'selectedRoles', 'selectedPermissions']);
         }
 
         $this->success('Usuario creado con éxito!');
@@ -158,6 +166,7 @@ class Index extends Component
 
         $this->editing_user_id = $user->id;
         $this->userName  = $user->name;
+        $this->userLastName  = $user->apellidos;
         $this->userUsername = $user->username;
         $this->userEmail = $user->email;
         $this->userPassword = ''; // vacío, solo se setea si se cambia
@@ -176,6 +185,7 @@ class Index extends Component
     {
         $this->validate([
             'userName'     => 'required|string',
+            'userLastName'     => 'string',
             'userUsername'    => 'required|string|unique:users,username,' . $this->editing_user_id,
             'userEmail'    => 'required|email|unique:users,email,' . $this->editing_user_id,
             'userPassword' => 'nullable|min:6|confirmed',
@@ -186,6 +196,7 @@ class Index extends Component
 
         $data = [
             'name'  => $this->userName,
+            'apellidos'  => $this->userLastName,
             'username' => $this->userUsername,
             'email' => $this->userEmail,
         ];
@@ -208,6 +219,7 @@ class Index extends Component
             'edit_user_modal',
             'editing_user_id',
             'userName',
+            'userLastName',
             'userUsername',
             'userEmail',
             'userPassword',

@@ -12,6 +12,22 @@ class Show extends Component
     public $user;
     public $selectedTab = 'info-tab';
 
+    // Para ver imagen en grande
+    public bool $viewImageModal = false;
+    public ?string $viewImageModalUrl = null;
+
+    public function openViewImageModal($imageUrl)
+    {
+        $this->viewImageModalUrl = $imageUrl;
+        $this->viewImageModal = true;
+    }
+
+    public function closeViewImageModal()
+    {
+        $this->viewImageModal = false;
+        $this->viewImageModalUrl = null;
+    }
+
     public function mount()
     {
         if (!auth()->user()->hasPermissionTo('view_user')) {

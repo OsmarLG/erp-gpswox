@@ -6,9 +6,10 @@
     @if (auth()->user()->hasRole(['master', 'admin']))
         {{-- Stats en la parte superior --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <x-stat title="Total Users" :value="$totalUsers" icon="o-users" />
+            <x-stat title="Total Servicios" :value="$totalServices" icon="o-wrench" />
+            <x-stat title="Total Usuarios" :value="$totalUsers" icon="o-users" />
             <x-stat title="Total Roles" :value="$totalRoles" icon="o-lock-closed" />
-            <x-stat title="Total Perms" :value="$totalPermissions" icon="o-shield-check" />
+            <x-stat title="Total Permisos" :value="$totalPermissions" icon="o-shield-check" />
             <x-stat title="Users Today" :value="$usersTodayCount" icon="o-user-plus" />
         </div>
 

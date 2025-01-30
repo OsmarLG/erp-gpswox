@@ -3,10 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ServiciosController;
+use App\Http\Controllers\PermissionController;
 
 // Rutas de autenticación
 Route::prefix('auth')->group(function () {
@@ -46,5 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users.index');
         Route::get('/{id}', [UserController::class, 'show'])->name('users.show');
+    });
+
+    // Grupo de rutas para Servicios
+    Route::prefix('servicios')->group(function () {
+        Route::get('/', [ServiciosController::class, 'index'])->name('servicios.index');
     });
 });

@@ -34,8 +34,12 @@
     <!-- Formulario de Actualización -->
     <form wire:submit.prevent="updateProfile" class="space-y-4">
         <div>
-            <label class="block text-sm font-semibold">Nombre Completo</label>
+            <label class="block text-sm font-semibold">Nombre</label>
             <input type="text" wire:model="name" class="input input-bordered w-full">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold">Apellidos</label>
+            <input type="text" wire:model="lastname" class="input input-bordered w-full">
         </div>
         <div>
             <label class="block text-sm font-semibold">Email</label>
@@ -45,6 +49,166 @@
             <label class="block text-sm font-semibold">Username</label>
             <input type="text" wire:model="username" class="input input-bordered w-full">
         </div>
+        <x-datetime label="Fecha de nacimiento" wire:model="fecha_nacimiento" icon="o-calendar" />
+        @if (Auth::user()->hasRole('operador'))
+            <div class="mt-4">
+                <x-input label="Celular 1" wire:model="celular1" icon-right="o-phone" />
+                <x-input label="Celular 2" wire:model="celular2" icon-right="o-phone" />
+                <x-input label="Teléfono de casa" wire:model="telefono_casa" icon-right="o-phone" />
+                <x-input label="Contacto con quien vive" wire:model="nombre_contacto_con_quien_vive" />
+                <x-input label="Código Postal" wire:model="cp_domicilio" />
+
+                <!-- Grid para los archivos (INE, licencia, etc.) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    <!-- INE Frontal -->
+                    <div>
+                        <x-file wire:model="ine_frontal_file" label="INE (Frontal)"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <!-- Ajustamos el ancho/alto -->
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                <img src="{{ $ine_frontal_file
+                                    ? $ine_frontal_file->temporaryUrl()
+                                    : ($user->ine_frontal
+                                        ? asset('storage/' . $user->ine_frontal)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->ine_frontal ? asset('storage/' . $user->ine_frontal) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+
+                    <!-- INE Reverso -->
+                    <div>
+                        <x-file wire:model="ine_reverso_file" label="INE (Reverso)"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                <img src="{{ $ine_reverso_file
+                                    ? $ine_reverso_file->temporaryUrl()
+                                    : ($user->ine_reverso
+                                        ? asset('storage/' . $user->ine_reverso)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->ine_reverso ? asset('storage/' . $user->ine_reverso) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+                    <!-- Licencia Frontal -->
+                    <div>
+                        <x-file wire:model="licencia_frontal_file" label="Licencia (Frontal)"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+
+                                <img src="{{ $licencia_frontal_file
+                                    ? $licencia_frontal_file->temporaryUrl()
+                                    : ($user->licencia_frontal
+                                        ? asset('storage/' . $user->licencia_frontal)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->licencia_frontal ? asset('storage/' . $user->licencia_frontal) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+                    <!-- Licencia Reverso -->
+                    <div>
+                        <x-file wire:model="licencia_reverso_file" label="Licencia (Reverso)"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+
+                                <img src="{{ $licencia_reverso_file
+                                    ? $licencia_reverso_file->temporaryUrl()
+                                    : ($user->licencia_reverso
+                                        ? asset('storage/' . $user->licencia_reverso)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->licencia_reverso ? asset('storage/' . $user->licencia_reverso) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+                    <!-- Comprobante de Domicilio -->
+                    <div>
+                        <x-file wire:model="comprobante_domicilio_file" label="Comprobante de Domicilio"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+
+                                <img src="{{ $comprobante_domicilio_file
+                                    ? $comprobante_domicilio_file->temporaryUrl()
+                                    : ($user->comprobante_domicilio
+                                        ? asset('storage/' . $user->comprobante_domicilio)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->comprobante_domicilio ? asset('storage/' . $user->comprobante_domicilio) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+                    <!-- Foto Fachada -->
+                    <div>
+                        <x-file wire:model="foto_fachada_file" label="Foto de Fachada"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+
+                                <img src="{{ $foto_fachada_file
+                                    ? $foto_fachada_file->temporaryUrl()
+                                    : ($user->foto_fachada
+                                        ? asset('storage/' . $user->foto_fachada)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->foto_fachada ? asset('storage/' . $user->foto_fachada) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+
+                    <!-- Foto Estacionamiento -->
+                    <div>
+                        <x-file wire:model="foto_estacionamiento_file" label="Foto de Estacionamiento"
+                            accept="image/png, image/jpg, image/jpeg" crop-after-change>
+                            <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+
+                                <img src="{{ $foto_estacionamiento_file
+                                    ? $foto_estacionamiento_file->temporaryUrl()
+                                    : ($user->foto_estacionamiento
+                                        ? asset('storage/' . $user->foto_estacionamiento)
+                                        : asset('storage/user.png')) }}"
+                                    class="w-full h-full object-cover rounded-lg" />
+                            </div>
+                        </x-file>
+                        <div>
+                            <x-button label="Ver"
+                                wire:click="openViewImageModal('{{ $user->foto_estacionamiento ? asset('storage/' . $user->foto_estacionamiento) : asset('storage/user.png') }}')"
+                                icon-right="o-eye" spinner />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
         <button type="submit" class="w-full md:w-[25%] bg-slate-300 dark:bg-slate-800 dark:text-white btn">Actualizar
             Información Personal</button>
     </form>
@@ -78,8 +242,8 @@
     </form>
 
     {{-- Modal para crear roles --}}
-    <x-modal wire:model="update_avatar_modal" title="Actualizar Avatar" subtitle="Selecciona y recorta tu nueva imagen"
-        separator>
+    <x-modal wire:model="update_avatar_modal" title="Actualizar Avatar"
+        subtitle="Selecciona y recorta tu nueva imagen" separator>
         <x-form wire:submit.prevent="saveAvatar">
             <div class="flex justify-center">
                 <x-file wire:model="newAvatar" accept="image/png, image/jpg, image/jpeg" crop-after-change>
@@ -97,4 +261,13 @@
         </x-form>
     </x-modal>
 
+    <!-- Modal para ver imagen en grande -->
+    <x-modal wire:model="viewImageModal" max-width="full" class="!max-w-full !h-screen !rounded-none p-0">
+        <div class="relative w-full h-full flex items-center justify-center bg-black bg-opacity-90">
+            @if ($viewImageModalUrl)
+                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa"
+                    class="max-w-full max-h-full object-contain" />
+            @endif
+        </div>
+    </x-modal>
 </div>
