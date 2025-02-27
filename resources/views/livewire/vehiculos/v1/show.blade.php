@@ -52,20 +52,25 @@
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-card title="Solicitar Modificación de Información General">
                     <div class="flex items-center gap-4">
-                        <select wire:model="selectedField" class="form-select rounded-lg border-gray-300 shadow-sm w-1/2">
+                        <select wire:model="selectedField"
+                            class="form-select rounded-lg border-gray-300 shadow-sm w-1/2">
                             <option value="">Seleccionar campo a modificar</option>
                             @foreach ($vehicleFields as $field)
-                                <option value="{{ $field }}" 
-                                    @if ($requests->where('type', 'field')->where('field', $field)->isNotEmpty()) disabled @endif>
+                                <option value="{{ $field }}" @if ($requests->where('type', 'field')->where('field', $field)->isNotEmpty()) disabled @endif>
                                     {{ ucfirst(str_replace('_', ' ', $field)) }}
                                 </option>
                             @endforeach
                         </select>
-                
+
                         {{-- Botón para solicitar cambio --}}
-                        <x-button wire:click="requestModification('field', {{ $selectedField }})" label="Solicitar Cambio" icon="o-pencil" class="btn-warning"/>
+                        @if ($vehiculo->operador_id != null)
+                            <x-button wire:click="requestModification('field', {{ $selectedField }})"
+                                label="Solicitar Cambio" icon="o-pencil" class="btn-warning" />
+                        @else
+                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar cambio</p>
+                        @endif
                     </div>
-                </x-card>                
+                </x-card>
 
                 {{-- Fin de la sección de campos --}}
                 <x-card title="Solicitudes Pendientes de Información General">
@@ -87,7 +92,7 @@
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
                                             <x-button wire:click="deleteRequest({{ $request->id }})" label="Eliminar"
-                                                icon="o-trash" class="btn-error btn-sm" spinner/>
+                                                icon="o-trash" class="btn-error btn-sm" spinner />
                                         </td>
                                     </tr>
                                 @endforeach
@@ -193,12 +198,18 @@
                                             <p class="text-gray-500">No hay archivos para esta parte.</p>
                                         @endif
 
-                                        <x-button wire:click="requestModification('part', {{ $part->id }})"
-                                            label="Solicitar Cambio" icon="o-pencil" class="btn-warning btn-sm"
-                                            :disabled="$requests
-                                                ->where('type', 'part')
-                                                ->where('parte_id', $part->id)
-                                                ->isNotEmpty()" />
+                                        @if ($vehiculo->operador_id != null)
+                                            <x-button wire:click="requestModification('part', {{ $part->id }})"
+                                                label="Solicitar Cambio" icon="o-pencil" class="btn-warning btn-sm"
+                                                :disabled="$requests
+                                                    ->where('type', 'part')
+                                                    ->where('parte_id', $part->id)
+                                                    ->isNotEmpty()" />
+                                        @else
+                                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar cambio
+                                            </p>
+                                        @endif
+
                                     </x-slot:content>
                                 </x-collapse>
                             @endforeach
@@ -312,7 +323,8 @@
     <x-modal wire:model="viewImageModal" max-width="full" class="!max-w-full !h-screen !rounded-none p-0">
         <div class="relative w-full h-full flex items-center justify-center bg-black bg-opacity-90">
             @if ($viewImageModalUrl)
-                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa" class="max-w-full max-h-full object-contain" />
+                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa"
+                    class="max-w-full max-h-full object-contain" />
             @endif
         </div>
     </x-modal>
