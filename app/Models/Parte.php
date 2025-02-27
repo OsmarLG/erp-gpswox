@@ -17,4 +17,15 @@ class Parte extends Model
     {
         return $this->belongsTo(Categoria::class);
     }
+
+    public function vehicleParts()
+    {
+        return $this->hasMany(VehiclePart::class);
+    }
+
+    public function files()
+    {
+        return $this->hasManyThrough(File::class, VehiclePart::class, 'parte_id', 'model_id')
+            ->where('files.model_type', VehiclePart::class);
+    }
 }

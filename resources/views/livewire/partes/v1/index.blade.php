@@ -37,13 +37,12 @@
     </x-table>
 
     {{-- Modal para crear partes --}}
-    <x-modal wire:model="create_parte_modal" title="Crear Parte" subtitle="Añade una nueva Parte"
-        separator>
+    <x-modal wire:model="create_parte_modal" title="Crear Parte" subtitle="Añade una nueva Parte" separator>
         <x-form wire:submit.prevent="createParte">
-            <x-input label="Nombre" placeholder="Nombre de la Parte" icon="o-cog"
-                hint="Nombre de la Parte" wire:model="parteNombre" required />
+            <x-input label="Nombre" placeholder="Nombre de la Parte" icon="o-cog" hint="Nombre de la Parte"
+                wire:model="parteNombre" required />
 
-                {{-- <x-choices label="Categoría" allow-all wire:model="selectedCategorias" :options="$categorias" /> --}}
+            <x-select label="Categoría" wire:model="categoria_id" :options="$availableCategorias" required />
 
             <x-slot:actions>
                 <x-checkbox label="Continuar" wire:model="continuarCreando" hint="Continuar creando" />
@@ -54,18 +53,17 @@
     </x-modal>
 
     {{-- Modal para editar parte --}}
-    <x-modal wire:model="edit_parte_modal" title="Editar Parte" subtitle="Actualiza una Parte existente"
-        separator>
+    <x-modal wire:model="edit_parte_modal" title="Editar Parte" subtitle="Actualiza una Parte existente" separator>
         <x-form wire:submit.prevent="updateParte">
             <x-input label="Nombre" placeholder="Nombre de la Parte" icon="o-cog" hint="Nombre de la Parte"
-                wire:model="parteNombre" />      
+                wire:model="parteNombre" />
 
-            {{-- <x-choices label="Categoría" allow-all wire:model="selectedCategorias" :options="$categorias" /> --}}
+            <x-select label="Categoría" wire:model="categoria_id" :options="$availableCategorias" required />
 
             <x-slot:actions>
                 <x-button label="Cancelar" @click="$wire.edit_parte_modal = false" />
                 <x-button label="Actualizar" class="btn-primary" type="submit" />
             </x-slot:actions>
         </x-form>
-    </x-modal>   
+    </x-modal>
 </div>

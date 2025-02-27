@@ -22,13 +22,15 @@ class Index extends Component
     public string $parteNombre = '';
     public ?int $categoria_id = null;
 
+    public array $availableCategorias = [];
+
     public bool $continuarCreando = false;
 
     // Cabeceras de la tabla
     public array $headers = [
         ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
         ['key' => 'nombre', 'label' => 'Nombre', 'class' => 'w-1'],
-        ['key' => 'categoria.nombre', 'label' => 'Categoría', 'class' => 'text-black dark:text-white'], // Muestra el nombre de la categoría
+        ['key' => 'categoria.nombre', 'label' => 'Categoría', 'class' => 'w-1'],
     ];
 
     public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
@@ -37,6 +39,21 @@ class Index extends Component
     {
         if (!auth()->user() || !auth()->user()->hasPermissionTo('view_any_parte')) {
             abort(403);
+        }
+
+        // Cargar las categorías disponibles
+        $categorias = Categoria::pluck('nombre', 'id')->toArray();
+
+        $this->availableCategorias = collect($categorias)->map(function ($categoriaName, $categoriaId) {
+            return [
+                'id'   => $categoriaId,
+                'name' => $categoriaName
+            ];
+        })->values()->toArray();
+
+        // Selecciona la primera categoría si no hay una asignada
+        if (empty($this->categoria_id) && !empty($this->availableCategorias)) {
+            $this->categoria_id = array_key_first($this->availableCategorias);
         }
     }
 
@@ -133,4 +150,3 @@ class Index extends Component
         ]);
     }
 }
-

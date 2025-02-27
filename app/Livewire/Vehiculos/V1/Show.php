@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Vehiculos\V1;
 
+use App\Models\Parte;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleOperatorHistory;
+use App\Models\VehiclePart;
+use App\Models\VehicleRequest;
 use App\Models\VehicleServiceRecord;
 use App\Notifications\ServiceNotification;
 use App\Services\HttpRequestService;
@@ -26,6 +29,42 @@ class Show extends Component
     public $vin_file = '';
 
     protected $paginationTheme = 'tailwind';
+
+    public $selectedField = '';
+    public $selectedPart = '';
+
+    public $vehicleFields = [
+        'placa',
+        'tipo_marca',
+        'nombre_unidad',
+        'operador_id',
+        'vin',
+        'no_tarjeta_circulacion',
+        'vigencia_tarjeta',
+        'tag_numero',
+        'tag_gasolina_id',
+        'verificacion_vencimiento',
+        'fecha_bateria',
+        'rines_medida',
+        'medida_llantas',
+        'poliza_no',
+        'compania_seguros',
+        'poliza_vigencia',
+        'costo_poliza',
+        'pago',
+        'telefono_seguro',
+        'gpswox_id',
+        'id_gps1',
+        'tel_gps1',
+        'imei_gps1',
+        'vigencia_gps1',
+        'saldo_gps1',
+        'id_gps2',
+        'tel_gps2',
+        'imei_gps2',
+        'vigencia_gps2',
+        'saldo_gps2',
+    ];
 
     public function openViewImageModal($imageUrl)
     {
@@ -110,7 +149,8 @@ class Show extends Component
         );
     }
 
-    public function initService(int $serviceId) {
+    public function initService(int $serviceId)
+    {
         return redirect()->route('servicios.service', $serviceId);
     }
 
@@ -154,11 +194,77 @@ class Show extends Component
         );
     }
 
+    public function requestModification($type, $value = null)
+    {
+        if ($type === 'field') {
+            if (VehicleRequest::where('vehicle_id', $this->vehiculo->id)
+                ->where('type', 'field')
+                ->where('field', $this->selectedField)
+                ->where('status', 'pending')
+                ->exists()
+            ) {
+                $this->toast('warning', 'Solicitud Existente', 'Ya existe una solicitud pendiente para este campo.');
+                return;
+            }
+
+            VehicleRequest::create([
+                'vehicle_id' => $this->vehiculo->id,
+                'field' => $this->selectedField,
+                'operador_id' => $this->vehiculo->operador_id,
+                'status' => 'pending',
+                'type' => 'field',
+            ]);
+        } elseif ($type === 'part') {
+            if (VehicleRequest::where('vehicle_id', $this->vehiculo->id)
+                ->where('type', 'part')
+                ->where('parte_id', $value)
+                ->where('status', 'pending')
+                ->exists()
+            ) {
+                $this->toast('warning', 'Solicitud Existente', 'Ya existe una solicitud pendiente para esta parte.');
+                return;
+            }
+
+            VehicleRequest::create([
+                'vehicle_id' => $this->vehiculo->id,
+                'parte_id' => $value,
+                'operador_id' => $this->vehiculo->operador_id,
+                'status' => 'pending',
+                'type' => 'part',
+            ]);
+        }
+
+        $this->toast('success', 'Solicitud Enviada', 'Se ha solicitado la modificación.');
+    }
+
+    public function deleteRequest($requestId)
+    {
+        $request = VehicleRequest::find($requestId);
+
+        if ($request) {
+            $request->delete();
+
+            $this->toast(
+                type: 'success',
+                title: 'Eliminado',
+                description: 'Solicitud eliminada correctamente.',
+                icon: 'o-trash',
+                css: 'alert-success text-white text-sm',
+                timeout: 3000
+            );
+        }
+    }
+
     public function render()
     {
         $operators = User::whereHas('roles', fn($q) => $q->whereIn('name', ['operador']))->get();
         $serviceRecords = VehicleServiceRecord::where('vehicle_id', $this->vehiculo->id)->orderBy('id', 'desc')->paginate(10);
+        $parts = Parte::with(['categoria', 'files'])
+            ->orderBy('categoria_id') // Ordena por categoría
+            ->get();
 
-        return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators'));
+        $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)->get();
+
+        return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators', 'parts', 'requests'));
     }
 }

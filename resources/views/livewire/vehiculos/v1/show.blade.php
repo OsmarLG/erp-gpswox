@@ -49,43 +49,163 @@
     {{-- Tabs con Mary UI --}}
     <x-tabs wire:model="selectedTab">
         <x-tab name="info-tab" label="Detalles Generales" icon="o-information-circle">
-            <div class="mt-4">
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <x-card title="Solicitar Modificación de Información General">
+                    <div class="flex items-center gap-4">
+                        <select wire:model="selectedField" class="form-select rounded-lg border-gray-300 shadow-sm w-1/2">
+                            <option value="">Seleccionar campo a modificar</option>
+                            @foreach ($vehicleFields as $field)
+                                <option value="{{ $field }}" 
+                                    @if ($requests->where('type', 'field')->where('field', $field)->isNotEmpty()) disabled @endif>
+                                    {{ ucfirst(str_replace('_', ' ', $field)) }}
+                                </option>
+                            @endforeach
+                        </select>
+                
+                        {{-- Botón para solicitar cambio --}}
+                        <x-button wire:click="requestModification('field', {{ $selectedField }})" label="Solicitar Cambio" icon="o-pencil" class="btn-warning"/>
+                    </div>
+                </x-card>                
+
+                {{-- Fin de la sección de campos --}}
+                <x-card title="Solicitudes Pendientes de Información General">
+                    @if ($requests->where('type', 'field')->count())
+                        <table class="table-auto w-full text-sm text-left">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Operador</th>
+                                    <th>Estatus</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($requests->where('type', 'field') as $request)
+                                    <tr>
+                                        <td>{{ ucfirst(str_replace('_', ' ', $request->field)) }}</td>
+                                        <td>{{ $request->operador->name }}</td>
+                                        <td>{{ ucfirst($request->status) }}</td>
+                                        <td>
+                                            <x-button wire:click="deleteRequest({{ $request->id }})" label="Eliminar"
+                                                icon="o-trash" class="btn-error btn-sm" spinner/>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <p class="text-sm text-gray-500">No hay solicitudes pendientes.</p>
+                    @endif
+                </x-card>
+
                 <x-card title="Información General">
-                    <p><strong>Nombre:</strong> {{ $vehiculo->nombre_unidad }}</p>
-                    <p><strong>Placa:</strong> {{ $vehiculo->placa }}</p>
-                    <p><strong>Tipo/Marca:</strong> {{ $vehiculo->tipo_marca }}</p>
-                    <p><strong>VIN:</strong> {{ $vehiculo->vin }}</p>
-                    <p><strong>TAG Gasolina ID:</strong> {{ $vehiculo->tag_gasolina_id }}</p>
-                    <p><strong>Fecha de Registro:</strong> {{ $vehiculo->created_at }}</p>
-                    <br>
-                    <p><strong>Telefono Seguro:</strong> {{ $vehiculo->telefono_seguro }}</p>
-                    <p><strong>Operador:</strong> {{ $vehiculo->operador ? $vehiculo->operador->name : 'No asignado' }}</p>
-                    <p><strong>ID GPS WOX:</strong> {{ $vehiculo->gpswox_id }}</p>
+                    <p><strong>Nombre Unidad:</strong> {{ $vehiculo->nombre_unidad ?? 'N/A' }}</p>
+                    <p><strong>Placa:</strong> {{ $vehiculo->placa ?? 'N/A' }}</p>
+                    <p><strong>Tipo/Marca:</strong> {{ $vehiculo->tipo_marca ?? 'N/A' }}</p>
+                    <p><strong>VIN:</strong> {{ $vehiculo->vin ?? 'N/A' }}</p>
+                    <p><strong>ID GPS WOX:</strong> {{ $vehiculo->gpswox_id ?? 'N/A' }}</p>
                     <p><strong>Odómetro:</strong>
                         {{ $odometerValue ? number_format($odometerValue, 2) . ' km' : 'No disponible' }}</p>
+                    <p><strong>Teléfono Seguro:</strong> {{ $vehiculo->telefono_seguro ?? 'N/A' }}</p>
+                    <p><strong>TAG Gasolina ID:</strong> {{ $vehiculo->tag_gasolina_id ?? 'N/A' }}</p>
                 </x-card>
                 <x-card title="Información de Documentación">
-                    <p><strong>No. Tarjeta de Circulación:</strong> {{ $vehiculo->no_tarjeta_circulacion }}</p>
-                    <p><strong>Vigencia:</strong> {{ $vehiculo->vigencia_tarjeta }}</p>
-                    <p><strong>No. Tag:</strong> {{ $vehiculo->tag_numero }}</p>
-                    <p><strong>Verificación Vencimiento:</strong> {{ $vehiculo->verificacion_vencimiento }}</p>
-                    <p><strong>Poliza No:</strong> {{ $vehiculo->poliza_no }}</p>
-                    <p><strong>Poliza Vigencia:</strong> {{ $vehiculo->poliza_vigencia }}</p>
-                    <p><strong>Poliza Costo:</strong> {{ $vehiculo->costo_poliza }}</p>
+                    <p><strong>No. Tarjeta de Circulación:</strong> {{ $vehiculo->no_tarjeta_circulacion ?? 'N/A' }}
+                    </p>
+                    <p><strong>Vigencia:</strong> {{ $vehiculo->vigencia_tarjeta ?? 'N/A' }}</p>
+                    <p><strong>No. Tag:</strong> {{ $vehiculo->tag_numero ?? 'N/A' }}</p>
+                    <p><strong>Verificación Vencimiento:</strong> {{ $vehiculo->verificacion_vencimiento ?? 'N/A' }}
+                    </p>
+                    <p><strong>Poliza No:</strong> {{ $vehiculo->poliza_no ?? 'N/A' }}</p>
+                    <p><strong>Compañía Seguros:</strong> {{ $vehiculo->compania_seguros ?? 'N/A' }}</p>
+                    <p><strong>Poliza Vigencia:</strong> {{ $vehiculo->poliza_vigencia ?? 'N/A' }}</p>
+                    <p><strong>Poliza Costo:</strong> {{ $vehiculo->costo_poliza ?? 'N/A' }}</p>
                 </x-card>
-                <x-card title="Información de Partes">
-                    <p><strong>Fecha de Bateria:</strong> {{ $vehiculo->fecha_bateria }}</p>
-                    <p><strong>Rines Medida:</strong> {{ $vehiculo->rines_medida }}</p>
-                    <p><strong>Medida de Llantas:</strong> {{ $vehiculo->medida_llantas }}</p>
+                <x-card title="Información de GPS">
+                    <p><strong>ID GPS 1:</strong> {{ $vehiculo->id_gps1 ?? 'N/A' }}</p>
+                    <p><strong>Teléfono GPS 1:</strong> {{ $vehiculo->tel_gps1 ?? 'N/A' }}</p>
+                    <p><strong>IMEI GPS 1:</strong> {{ $vehiculo->imei_gps1 ?? 'N/A' }}</p>
+                    <p><strong>Vigencia GPS 1:</strong> {{ $vehiculo->vigencia_gps1 ?? 'N/A' }}</p>
+                    <p><strong>Saldo GPS 1:</strong> {{ $vehiculo->saldo_gps1 ?? 'N/A' }}</p>
+                    <p><strong>ID GPS 2:</strong> {{ $vehiculo->id_gps2 ?? 'N/A' }}</p>
+                    <p><strong>Teléfono GPS 2:</strong> {{ $vehiculo->tel_gps2 ?? 'N/A' }}</p>
+                    <p><strong>IMEI GPS 2:</strong> {{ $vehiculo->imei_gps2 ?? 'N/A' }}</p>
+                    <p><strong>Vigencia GPS 2:</strong> {{ $vehiculo->vigencia_gps2 ?? 'N/A' }}</p>
+                    <p><strong>Saldo GPS 2:</strong> {{ $vehiculo->saldo_gps2 ?? 'N/A' }}</p>
                 </x-card>
             </div>
         </x-tab>
-        
+
         <x-tab name="partes-tab" label="Partes del Vehículo" icon="o-truck">
             <div class="mt-4">
-                <x-card title="Partes del Vehículo">
-                    <p>Pendiente</p>
+                <x-card title="Solicitudes Pendientes de Partes del Vehículo">
+                    @if ($requests->where('type', 'part')->count())
+                        <table class="table-auto w-full text-sm text-left">
+                            <thead>
+                                <tr>
+                                    <th>Parte</th>
+                                    <th>Operador</th>
+                                    <th>Estatus</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($requests->where('type', 'part') as $request)
+                                    <tr>
+                                        <td>{{ $request->parte->nombre ?? 'N/A' }}</td>
+                                        <td>{{ $request->operador->name }}</td>
+                                        <td>{{ ucfirst($request->status) }}</td>
+                                        <td>
+                                            <x-button wire:click="deleteRequest({{ $request->id }})" label="Eliminar"
+                                                icon="o-trash" class="btn-error btn-sm" />
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <p class="text-sm text-gray-500">No hay solicitudes pendientes.</p>
+                    @endif
                 </x-card>
+
+                <x-card title="Partes del Vehículo">
+                    @foreach ($parts->groupBy('categoria.nombre') as $categoria => $partes)
+                        <div class="mb-4">
+                            <h3 class="text-lg font-bold text-primary">{{ $categoria }}</h3>
+                            @foreach ($partes as $part)
+                                <x-collapse>
+                                    <x-slot:heading>
+                                        {{ $part->nombre }}
+                                    </x-slot:heading>
+                                    <x-slot:content>
+                                        @if ($part->files->isNotEmpty())
+                                            <ul>
+                                                @foreach ($part->files as $file)
+                                                    <li class="mb-2">
+                                                        <a href="{{ asset('storage/' . $file->path) }}"
+                                                            target="_blank">
+                                                            {{ $file->description ?? 'Ver Archivo' }}
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p class="text-gray-500">No hay archivos para esta parte.</p>
+                                        @endif
+
+                                        <x-button wire:click="requestModification('part', {{ $part->id }})"
+                                            label="Solicitar Cambio" icon="o-pencil" class="btn-warning btn-sm"
+                                            :disabled="$requests
+                                                ->where('type', 'part')
+                                                ->where('parte_id', $part->id)
+                                                ->isNotEmpty()" />
+                                    </x-slot:content>
+                                </x-collapse>
+                            @endforeach
+                        </div>
+                    @endforeach
+                </x-card>
+                {{-- Fin de la sección de partes --}}
             </div>
         </x-tab>
 
@@ -113,8 +233,8 @@
                                         <td>{{ ucfirst($record->status) }}</td>
                                         <td>{{ $record->operador->name ?? 'N/A' }}</td>
                                         <td>
-                                            <x-button wire:click="initService({{ $record->id }})"
-                                                label="Ver" class="btn-primary btn-sm" />
+                                            <x-button wire:click="initService({{ $record->id }})" label="Ver"
+                                                class="btn-primary btn-sm" />
                                         </td>
                                     </tr>
                                 @endforeach
@@ -135,8 +255,8 @@
                     <ul>
                         @foreach ($vehiculo->operatorHistory->sortByDesc('created_at') as $history)
                             <li>
-                                Nombre: {{ $history->operador->name ?? 'N/A' }} - 
-                                Fecha Asignación: {{ $history->fecha_asignacion->format('d-m-Y') }} 
+                                Nombre: {{ $history->operador->name ?? 'N/A' }} -
+                                Fecha Asignación: {{ $history->fecha_asignacion->format('d-m-Y') }}
                                 @isset($history->fecha_liberacion)
                                     - Fecha Liberación: {{ $history->fecha_liberacion->format('d-m-Y') }}
                                 @endisset
@@ -167,9 +287,11 @@
                                         <td>{{ $request->operador->name }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
-                                            @if($request->status === 'pending')
-                                                <x-button label="Aceptar" class="btn-success btn-sm" wire:click="approveRequest({{ $request->id }})" />
-                                                <x-button label="Rechazar" class="btn-error btn-sm" wire:click="rejectRequest({{ $request->id }})" />
+                                            @if ($request->status === 'pending')
+                                                <x-button label="Aceptar" class="btn-success btn-sm"
+                                                    wire:click="approveRequest({{ $request->id }})" />
+                                                <x-button label="Rechazar" class="btn-error btn-sm"
+                                                    wire:click="rejectRequest({{ $request->id }})" />
                                             @else
                                                 <span class="text-gray-500">Procesado</span>
                                             @endif
@@ -183,7 +305,7 @@
                     @endif
                 </x-card>
             </div>
-        </x-tab>        
+        </x-tab>
     </x-tabs>
 
     {{-- Modal para ver imagen en pantalla completa --}}
