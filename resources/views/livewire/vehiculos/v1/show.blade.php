@@ -91,8 +91,13 @@
                                         <td>{{ $request->operador->name }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
-                                            <x-button wire:click="deleteRequest({{ $request->id }})" label="Eliminar"
-                                                icon="o-trash" class="btn-error btn-sm" spinner />
+                                            @if ($request->status === 'initiated' || $request->status === 'pending')
+                                                <x-button wire:click="showRequest({{ $request->id }})" icon="o-cog"
+                                                    label="Ver" class="btn-primary btn-sm" />
+
+                                                <x-button wire:click="deleteRequest({{ $request->id }})"
+                                                    label="Eliminar" icon="o-trash" class="btn-error btn-sm" />
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -161,8 +166,13 @@
                                         <td>{{ $request->operador->name }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
-                                            <x-button wire:click="deleteRequest({{ $request->id }})" label="Eliminar"
-                                                icon="o-trash" class="btn-error btn-sm" />
+                                            @if ($request->status === 'initiated' || $request->status === 'pending')
+                                                <x-button wire:click="showRequest({{ $request->id }})" icon="o-cog"
+                                                    label="Ver" class="btn-primary btn-sm" />
+
+                                                <x-button wire:click="deleteRequest({{ $request->id }})"
+                                                    label="Eliminar" icon="o-trash" class="btn-error btn-sm" />
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -183,15 +193,39 @@
                                         {{ $part->nombre }}
                                     </x-slot:heading>
                                     <x-slot:content>
+                                        {{-- {{ dd($part) }} --}}
                                         @if ($part->files->isNotEmpty())
                                             <ul>
                                                 @foreach ($part->files as $file)
-                                                    <li class="mb-2">
-                                                        <a href="{{ asset('storage/' . $file->path) }}"
-                                                            target="_blank">
-                                                            {{ $file->description ?? 'Ver Archivo' }}
-                                                        </a>
-                                                    </li>
+                                                    @php
+                                                        $extension = pathinfo($file->path, PATHINFO_EXTENSION);
+                                                    @endphp
+
+                                                    <div class="border p-4 rounded-lg">
+                                                        @if (in_array($extension, ['jpg', 'jpeg', 'png']))
+                                                            {{-- USO DE X-IMAGE-GALLERY para 1 o varias imgs:
+                                                        Si deseas agrupar imágenes, conviene
+                                                        agrupar primero en un array y mandarlas juntas.
+                                                        Aquí, cada file es una sola imagen, así que
+                                                        podrías mandar [asset('storage/'.$file->path)] como array
+                                                     --}}
+                                                            <x-image-gallery :images="[asset('storage/' . $file->path)]"
+                                                                class="h-40 rounded-box" />
+                                                        @elseif($extension === 'mp4')
+                                                            <video controls class="w-full rounded-lg">
+                                                                <source src="{{ asset('storage/' . $file->path) }}"
+                                                                    type="video/mp4">
+                                                                Tu navegador no soporta la reproducción de videos.
+                                                            </video>
+                                                        @endif
+
+                                                        <p class="text-sm text-gray-700 mt-2">
+                                                            {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
+                                                        </p>
+                                                        <p class="text-sm text-gray-700 mt-2">
+                                                            <strong>{{ '('.$file->user->id.') ' . ' - ' . $file->user->name }}</strong>
+                                                        </p>
+                                                    </div>
                                                 @endforeach
                                             </ul>
                                         @else

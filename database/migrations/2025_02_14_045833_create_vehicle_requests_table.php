@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('vehicle_id')->nullable();
             $table->string('field')->nullable();
             $table->foreignId('operador_id')->constrained('users')->onDelete('cascade');
-            $table->enum('status', ['pending', 'finished', 'accepted', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'initiated', 'finished', 'accepted', 'rejected', 'canceled'])->default('pending');
             $table->timestamps();
         });
     }

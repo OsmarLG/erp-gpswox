@@ -3,6 +3,8 @@
     {{ $path = implode(' / ', array_map('ucfirst', explode('/', request()->path()))) }}
     <h2 class="text-xl font-bold mb-4 text-center">Dashboard</h2>
 
+    {{-- ADMIN    --}}
+
     @if (auth()->user()->hasRole(['master', 'admin']))
         {{-- Stats en la parte superior --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -121,6 +123,9 @@
             </div> --}}
         </div>
     @endif
+
+    {{-- OPERADOR --}}
+
     @if (auth()->user()->hasRole(['operador']))
         {{-- Información del vehículo asignado --}}
         @if (auth()->user()->vehiculo)
@@ -137,8 +142,9 @@
         {{-- Servicios Pendientes --}}
         <div class="mt-6">
             {{-- Stats en la parte superior --}}
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-stat title="Total Servicios Pendientes" :value="$servicesPending->count()" icon="o-wrench" />
+                <x-stat title="Total Peticiones de Vehiculo Pendientes" :value="$vehicleRequestsPending->count()" icon="o-wrench" />
             </div>
             <x-card title="Servicios Pendientes">
                 @if ($servicesPending->count())
@@ -176,6 +182,43 @@
                     {{ $servicesPending->links() }}
                 @else
                     <p class="text-gray-500">No hay servicios pendientes.</p>
+                @endif
+            </x-card>
+
+            {{-- Peticiones de Vehiculos Pendientes --}}
+            <x-card title="Peticiones de Vehiculos Pendientes">
+                @if ($vehicleRequestsPending->count())
+                    <table class="table-auto w-full text-sm text-left">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>A Cambiar</th>                                
+                                <th>Tiempo Atrasado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($vehicleRequestsPending as $service)
+                                <tr>
+                                    <td>{{ $service->type === 'field' ? 'Campo' : 'Parte de Vehículo' }}</td>
+                                    <td>{{ $service->type === 'field' ? ucfirst($service->field) : ucfirst($service->parte->nombre) }}</td>
+                                    <td>{{ $service->created_at->diffForHumans() }}</td>
+                                    <td>
+                                        @if($service->status === 'initiated')
+                                            <x-button wire:click="showRequest({{ $service->id }})" icon="o-cog"
+                                                label="Continuar" class="btn-primary btn-sm" />
+                                        @else
+                                            <x-button wire:click="initRequest({{ $service->id }})" icon="o-cog"
+                                                label="Iniciar" class="btn-primary btn-sm" />
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    {{ $servicesPending->links() }}
+                @else
+                    <p class="text-gray-500">No hay peticiones de vehiculos pendientes.</p>
                 @endif
             </x-card>
         </div>

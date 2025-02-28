@@ -2,16 +2,17 @@
 
 namespace App\Livewire;
 
-use Carbon\Carbon;
+use App\Models\Servicio;
 use App\Models\User;
 use App\Models\Vehicle;
-use Livewire\Component;
-use App\Models\Servicio;
-use Illuminate\Support\Arr;
-use Spatie\Permission\Models\Role;
+use App\Models\VehicleRequest;
 use App\Models\VehicleServiceRecord;
-use Spatie\Permission\Models\Permission;
+use Carbon\Carbon;
+use Illuminate\Support\Arr;
+use Livewire\Component;
 use Livewire\WithPagination;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class Dashboard extends Component
 {
@@ -104,10 +105,25 @@ class Dashboard extends Component
         return redirect()->route('servicios.service', $serviceId);
     }
 
+    public function initRequest(int $serviceId)
+    {
+        $service = VehicleRequest::findOrFail($serviceId);
+
+        $service->update(['status' => 'initiated']);
+
+        return redirect()->route('servicios.request', $serviceId);
+    }
+
+    public function showRequest(int $serviceId)
+    {
+        return redirect()->route('servicios.request', $serviceId);
+    }
+
     public function render()
     {
         $servicesPending = [];
         $servicesCompleted = [];
+        $vehicleRequestsPending = [];
 
         if (auth()->user()->hasRole(['master', 'admin'])) {
             $servicesPending = VehicleServiceRecord::where('status', 'pending')->orWhere('status', 'initiated')->orderBy('id', 'desc')->paginate(10);
@@ -127,8 +143,13 @@ class Dashboard extends Component
                 ->where('status', 'completed')
                 ->orderBy('id', 'desc')
                 ->paginate(10);
+
+            $vehicleRequestsPending = VehicleRequest::where('vehicle_id', auth()->user()->vehiculo->id)
+                ->whereIn('status', ['pending', 'initiated'])
+                ->orderBy('id', 'desc')
+                ->paginate(10);
         }
 
-        return view('livewire.dashboard', compact('servicesPending', 'servicesCompleted'));
+        return view('livewire.dashboard', compact('servicesPending', 'servicesCompleted', 'vehicleRequestsPending'));
     }
 }

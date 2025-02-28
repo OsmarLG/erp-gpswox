@@ -16,6 +16,11 @@ class ServiciosController extends Controller
         return view('servicios.service', ['servicio' => $id]);
     }
 
+    public function request($id)
+    {
+        return view('servicios.request', ['request' => $id]);
+    }
+
     public function create()
     {
         return view('servicios.create');

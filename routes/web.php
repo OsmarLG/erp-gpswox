@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('servicios')->group(function () {
         Route::get('/', [ServiciosController::class, 'index'])->name('servicios.index');
         Route::get('/service/{id}', [ServiciosController::class, 'service'])->name('servicios.service');
+        Route::get('/request/{id}', [ServiciosController::class, 'request'])->name('servicios.request');
         Route::get('/create', [ServiciosController::class, 'create'])->name('servicios.create');
     });
 

@@ -135,6 +135,23 @@ class Show extends Component
                     }
                 }
             }
+            
+            // Actualizar operador en registros de solicitud pendientes
+            $pendingRequests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)
+                ->whereIn('status', ['pending', 'initiated', 'finished'])
+                ->get();
+
+            foreach ($pendingRequests as $request) {
+                $request->update(['operador_id' => $this->newOperatorId]);
+
+                // Enviar notificación al nuevo operador
+                if ($this->newOperatorId) {
+                    $newOperator = User::find($this->newOperatorId);
+                    if ($newOperator) {
+                        // $newOperator->notify(new RequestNotification($this->vehiculo, $request->type));
+                    }
+                }
+            }
         }
 
         $this->vehiculo->update(['operador_id' => $this->newOperatorId]);
@@ -237,6 +254,24 @@ class Show extends Component
         $this->toast('success', 'Solicitud Enviada', 'Se ha solicitado la modificación.');
     }
 
+    public function showRequest($requestId)
+    {
+        $request = VehicleRequest::find($requestId);
+
+        if (!$request) {
+            $this->toast(
+                type: 'error',
+                title: 'No encontrado',
+                description: 'Solicitud no encontrada.',
+                icon: 'o-x-circle',
+                css: 'alert-error text-white text-sm',
+                timeout: 3000
+            );
+        }
+
+        return redirect()->route('servicios.request', $requestId);
+    }
+
     public function deleteRequest($requestId)
     {
         $request = VehicleRequest::find($requestId);
@@ -252,6 +287,15 @@ class Show extends Component
                 css: 'alert-success text-white text-sm',
                 timeout: 3000
             );
+        } else {
+            $this->toast(
+                type: 'error',
+                title: 'No encontrado',
+                description: 'Solicitud no encontrada.',
+                icon: 'o-x-circle',
+                css: 'alert-error text-white text-sm',
+                timeout: 3000
+            );
         }
     }
 
@@ -259,11 +303,11 @@ class Show extends Component
     {
         $operators = User::whereHas('roles', fn($q) => $q->whereIn('name', ['operador']))->get();
         $serviceRecords = VehicleServiceRecord::where('vehicle_id', $this->vehiculo->id)->orderBy('id', 'desc')->paginate(10);
-        $parts = Parte::with(['categoria', 'files'])
+        $parts = Parte::with(['categoria', 'files', 'vehicleRequests'])
             ->orderBy('categoria_id') // Ordena por categoría
             ->get();
 
-        $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)->get();
+        $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)->whereIn('status', ['pending', 'initiated'])->get();
 
         return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators', 'parts', 'requests'));
     }
