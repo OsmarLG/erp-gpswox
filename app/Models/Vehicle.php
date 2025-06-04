@@ -71,4 +71,10 @@ class Vehicle extends Model
     {
         return $this->hasMany(ServiceRequest::class, 'vehicle_id');
     }
+
+    public function getKilometrajeAttribute()
+    {
+        $km = $this->hasMany(VehicleServiceKilometer::class, 'vehicle_id')->first();
+        return $km->current_km ?? $km->last_km ?? 0;
+    }
 }

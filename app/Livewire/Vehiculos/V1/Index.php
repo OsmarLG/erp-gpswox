@@ -47,6 +47,7 @@ class Index extends Component
         ['key' => 'placa', 'label' => 'Placa', 'class' => 'text-black dark:text-white'],
         ['key' => 'tipo_marca', 'label' => 'Tipo/Marca', 'class' => 'text-black dark:text-white'],
         ['key' => 'operador.name', 'label' => 'Operador', 'class' => 'text-black dark:text-white'],
+        ['key' => 'kilometraje', 'label' => 'Podometro', 'class' => 'text-black dark:text-white'],
         ['key' => 'gpswox_id', 'label' => 'ID GPSWOX', 'class' => 'text-black dark:text-white'],
     ];
     public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
