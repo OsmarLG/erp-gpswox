@@ -33,6 +33,7 @@ class Index extends Component
     public $tag_numero = '';
     public $tag_gasolina_id = '';
     public $verificacion_vencimiento = '';
+    public bool $get_datos_gpswox = false;
 
     // Listado de operadores disponibles
     public array $availableOperators = [];
@@ -176,6 +177,7 @@ class Index extends Component
         $this->tag_numero = $vehicle->tag_numero;
         $this->tag_gasolina_id = $vehicle->tag_gasolina_id;
         $this->verificacion_vencimiento = $vehicle->verificacion_vencimiento;
+        $this->get_datos_gpswox = $vehicle->get_datos_gpswox;
 
         $this->edit_vehicle_modal = true;
     }
@@ -194,6 +196,7 @@ class Index extends Component
             'tag_numero' => 'nullable|string',
             'tag_gasolina_id' => 'nullable|string',
             'verificacion_vencimiento' => 'nullable|string',
+            'get_datos_gpswox' => 'nullable|boolean',
         ]);
 
         $vehicle = Vehicle::findOrFail($this->editing_vehicle_id);
@@ -248,6 +251,7 @@ class Index extends Component
             'tag_numero' => $this->tag_numero,
             'tag_gasolina_id' => $this->tag_gasolina_id,
             'verificacion_vencimiento' => $this->verificacion_vencimiento ?: null,
+            'get_datos_gpswox' => $this->get_datos_gpswox,
         ]);
 
         $this->reset([
@@ -262,6 +266,7 @@ class Index extends Component
             'tag_numero',
             'tag_gasolina_id',
             'verificacion_vencimiento',
+            'get_datos_gpswox',
         ]);
 
         $this->edit_vehicle_modal = false;

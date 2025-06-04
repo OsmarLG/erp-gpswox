@@ -37,16 +37,19 @@
                     <p><strong>Nombre:</strong> {{ $user->name . ' ' . $user->apellidos }}</p>
                     <p><strong>Username:</strong> {{ $user->username }}</p>
                     <p><strong>Email:</strong> {{ $user->email }}</p>
-                    <p><strong>Fecha de Nacimiento:</strong> {{ $user->fecha_nacimiento->format('d-m-Y') }}</p>
+                    <p><strong>Fecha de Nacimiento:</strong> {{ optional($user->fecha_nacimiento)?->format('d/m/Y') }}</p>
                     <p><strong>Edad:</strong> {{ $user->edad . ' años' }}</p>
-                    @if (Auth::user()->hasRole('operador'))
-                        <p><strong>Celular 1:</strong> {{ $user->celular1 }}</p>
-                        <p><strong>Celular 2:</strong> {{ $user->celular2 }}</p>
-                        <p><strong>Teléfono de Casa:</strong> {{ $user->telefono_casa }}</p>
-                        <p><strong>Contacto con quien vive:</strong> {{ $user->nombre_contacto_con_quien_vive }}</p>
-                        <p><strong>CP Domicilio:</strong> {{ $user->cp_domicilio }}</p>
-                        <p><strong>Dirección:</strong> {{ $user->direccion_domicilio }}</p>
-                    @endif
+                    <p><strong>Celular 1:</strong> {{ $user->celular1 }}</p>
+                    <p><strong>Celular 2:</strong> {{ $user->celular2 }}</p>
+                    <p><strong>Teléfono de Casa:</strong> {{ $user->telefono_casa }}</p>
+                    <p><strong>Contacto con quien vive:</strong> {{ $user->nombre_contacto_con_quien_vive }}</p>
+                    <p><strong>CP Domicilio:</strong> {{ $user->cp_domicilio }}</p>
+                    <p><strong>Dirección:</strong> {{ $user->direccion_domicilio }}</p>
+                    <p><strong>Contacto de emergencia nombre:</strong> {{ $user->contacto_emergencia_nombre }}</p>
+                    <p><strong>Contacto de emergencia teléfono:</strong> {{ $user->contacto_emergencia_telefono }}</p>
+                    <p><strong>Link Google Maps:</strong> {{ $user->link_google_maps }}</p>
+                    <p><strong>Perfil Uber:</strong> {{ $user->perfil_uber }}</p>
+                    <p><strong>Datos Uber:</strong> {{ $user->datos_uber }}</p>
                 </x-card>
             </div>
         </x-tab>

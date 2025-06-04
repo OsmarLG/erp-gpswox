@@ -54,6 +54,12 @@ class Profile extends Component
     public $foto_estacionamiento;
     public $foto_estacionamiento_file;
 
+    public $contacto_emergencia_nombre;
+    public $contacto_emergencia_telefono;
+    public $link_google_maps;
+    public $perfil_uber;
+    public $datos_uber;
+
     // Modal control
     public bool $update_avatar_modal = false;
     public bool $viewImageModal = false;
@@ -89,6 +95,12 @@ class Profile extends Component
             $this->ubicacion_domicilio = $this->user->ubicacion_domicilio;
             $this->foto_fachada = $this->user->foto_fachada;
             $this->foto_estacionamiento = $this->user->foto_estacionamiento;
+
+            $this->contacto_emergencia_nombre = $this->user->contacto_emergencia_nombre;
+            $this->contacto_emergencia_telefono = $this->user->contacto_emergencia_telefono;
+            $this->link_google_maps = $this->user->link_google_maps;
+            $this->perfil_uber = $this->user->perfil_uber;
+            $this->datos_uber = $this->user->datos_uber;
         }
     }
 
@@ -116,13 +128,19 @@ class Profile extends Component
                     'direccion_domicilio' => 'nullable|string|max:255',
                     'ubicacion_domicilio' => 'nullable|string|max:255',
                     // archivos
-                    'ine_frontal_file' => 'nullable|image|max:2048',  // 2MB
-                    'ine_reverso_file' => 'nullable|image|max:2048',
-                    'licencia_frontal_file' => 'nullable|image|max:2048',
-                    'licencia_reverso_file' => 'nullable|image|max:2048',
-                    'comprobante_domicilio_file' => 'nullable|image|max:2048',
-                    'foto_fachada_file' => 'nullable|image|max:2048',
-                    'foto_estacionamiento_file' => 'nullable|image|max:2048',
+                    'ine_frontal_file' => 'nullable|image|max:10000',  // 10MB
+                    'ine_reverso_file' => 'nullable|image|max:10000',
+                    'licencia_frontal_file' => 'nullable|image|max:10000',
+                    'licencia_reverso_file' => 'nullable|image|max:10000',
+                    'comprobante_domicilio_file' => 'nullable|image|max:10000',
+                    'foto_fachada_file' => 'nullable|image|max:10000',
+                    'foto_estacionamiento_file' => 'nullable|image|max:10000',
+
+                    'contacto_emergencia_nombre' => 'nullable|string|max:255',
+                    'contacto_emergencia_telefono' => ['nullable', 'regex:/^\+?\d{1,10}$/'],
+                    'link_google_maps' => 'nullable|string|max:255',
+                    'perfil_uber' => 'nullable|string|max:255',
+                    'datos_uber' => 'nullable|string|max:255',
                 ]
             );
         }
@@ -179,6 +197,15 @@ class Profile extends Component
                 $estaPath = $this->foto_estacionamiento_file->store('estacionamientos', 'public');
                 $data['foto_estacionamiento'] = $estaPath;
             }
+
+            // Campos extra para operador
+            $data = array_merge($data, [
+                'contacto_emergencia_nombre' => $this->contacto_emergencia_nombre,
+                'contacto_emergencia_telefono' => $this->contacto_emergencia_telefono,
+                'link_google_maps' => $this->link_google_maps,
+                'perfil_uber' => $this->perfil_uber,
+                'datos_uber' => $this->datos_uber,
+            ]);
         }
 
         // Actualizar al usuario
@@ -231,7 +258,7 @@ class Profile extends Component
     public function saveAvatar()
     {
         $this->validate([
-            'newAvatar' => 'image|max:1024', // Máximo 1MB
+            'newAvatar' => 'image|max:10000', // Máximo 10MB
         ]);
 
         // Guardar la imagen en storage

@@ -42,6 +42,11 @@ class User extends Authenticatable
         'ubicacion_domicilio',
         'foto_fachada',
         'foto_estacionamiento',
+        'contacto_emergencia_nombre',
+        'contacto_emergencia_telefono',
+        'link_google_maps',
+        'perfil_uber',
+        'datos_uber',
     ];
 
     /**

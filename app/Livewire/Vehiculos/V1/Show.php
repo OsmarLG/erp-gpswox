@@ -2,23 +2,28 @@
 
 namespace App\Livewire\Vehiculos\V1;
 
+use App\Models\File;
 use App\Models\Parte;
 use App\Models\ServiceRequest;
+use App\Models\Servicio;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleOperatorHistory;
 use App\Models\VehiclePart;
 use App\Models\VehicleRequest;
+use App\Models\VehicleServiceKilometer;
 use App\Models\VehicleServiceRecord;
+use App\Models\VehicleServiceRecordDetail;
 use App\Notifications\ServiceNotification;
 use App\Services\HttpRequestService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 class Show extends Component
 {
-    use Toast, WithPagination;
+    use Toast, WithPagination, WithFileUploads;
 
     public $selectedTab = 'info-tab';
     public $vehiculo;
@@ -27,11 +32,13 @@ class Show extends Component
     public ?string $viewImageModalUrl = null;
     public $newOperatorId;
     public $vin_file = '';
+    public $service_id, $current_km, $availableServices;
 
     protected $paginationTheme = 'tailwind';
 
     public $selectedField = '';
     public $selectedPart = '';
+    public $files;
 
     public $vehicleFields = [
         'placa',
@@ -91,6 +98,43 @@ class Show extends Component
         // Filtrar el sensor de odómetro
         $this->odometerValue = collect($response[0]['items'][0]['sensors'] ?? [])
             ->firstWhere('type', 'odometer')['val'] ?? null;
+
+        $this->availableServices = Servicio::all();
+    }
+
+    public function uploadEvidence($partId)
+    {
+        if (!auth()->user()->hasRole(['master', 'admin'])) {
+            return abort(403);
+        }
+
+        if (!$this->files) {
+            $this->toast('error', 'Error', 'Debes seleccionar un archivo.');
+            return;
+        }
+
+        $filePath = $this->files->store('vehicle_request_files', 'public');
+
+        $request = VehicleRequest::create([
+            'vehicle_id' => $this->vehiculo->id,
+            'parte_id' => $partId,
+            'operador_id' => $this->vehiculo->operador_id ?? auth()->user()->id,
+            'type' => 'part',
+            'status' => 'finished',
+        ]);
+
+        File::create([
+            'path' => $filePath,
+            'model_type' => VehicleRequest::class,
+            'model_id' => $request->id,
+            'description' => 'Evidencia subida por ' . auth()->user()->name,
+            'operador_id' => $this->vehiculo->operador_id ?? auth()->user()->id,
+            'type'        => $this->files->getClientOriginalExtension(),
+        ]);
+
+        $this->reset('files');
+
+        $this->toast('success', 'Evidencia subida', 'El archivo fue guardado correctamente.');
     }
 
     public function changeOperator()
@@ -135,7 +179,7 @@ class Show extends Component
                     }
                 }
             }
-            
+
             // Actualizar operador en registros de solicitud pendientes
             $pendingRequests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)
                 ->whereIn('status', ['pending', 'initiated', 'finished'])
@@ -310,5 +354,40 @@ class Show extends Component
         $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)->whereIn('status', ['pending', 'initiated'])->get();
 
         return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators', 'parts', 'requests'));
+    }
+
+
+    public function storeServiceRecord()
+    {
+        $this->validate([
+            'service_id' => 'required|exists:servicios,id',
+            'current_km' => 'required|numeric|min:0',
+        ]);
+
+        $record = VehicleServiceRecord::create([
+            'vehicle_id' => $this->vehiculo->id,
+            'service_id' => $this->service_id,
+            'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
+            'status' => 'completed',
+            'fecha_realizacion' => now(),
+        ]);
+
+        VehicleServiceKilometer::updateOrCreate ([
+            'vehicle_id' => $this->vehiculo->id,
+            'service_id' => $this->service_id,
+        ], [
+            'last_km' => $this->current_km,
+            'current_km' => $this->odometerValue,
+        ]);
+
+        VehicleServiceRecordDetail::create([
+            'vehicle_service_record_id' => $record->id,
+            'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
+            'detalle' => 'Servicio registrado',
+        ]);
+
+        $this->reset(['service_id', 'current_km']);
+
+        $this->toast('success', 'Servicio registrado', 'El servicio fue guardado correctamente.');
     }
 }

@@ -118,6 +118,7 @@
                         {{ $odometerValue ? number_format($odometerValue, 2) . ' km' : 'No disponible' }}</p>
                     <p><strong>Teléfono Seguro:</strong> {{ $vehiculo->telefono_seguro ?? 'N/A' }}</p>
                     <p><strong>TAG Gasolina ID:</strong> {{ $vehiculo->tag_gasolina_id ?? 'N/A' }}</p>
+                    <p><strong>Recibir Datos de GPSWOX:</strong> {{ $vehiculo->get_datos_gpswox ? 'Sí' : 'No' }}</p>
                 </x-card>
                 <x-card title="Información de Documentación">
                     <p><strong>No. Tarjeta de Circulación:</strong> {{ $vehiculo->no_tarjeta_circulacion ?? 'N/A' }}
@@ -193,7 +194,6 @@
                                         {{ $part->nombre }}
                                     </x-slot:heading>
                                     <x-slot:content>
-                                        {{-- {{ dd($part) }} --}}
                                         @if ($part->files->isNotEmpty())
                                             <ul>
                                                 @foreach ($part->files as $file)
@@ -203,12 +203,6 @@
 
                                                     <div class="border p-4 rounded-lg">
                                                         @if (in_array($extension, ['jpg', 'jpeg', 'png']))
-                                                            {{-- USO DE X-IMAGE-GALLERY para 1 o varias imgs:
-                                                        Si deseas agrupar imágenes, conviene
-                                                        agrupar primero en un array y mandarlas juntas.
-                                                        Aquí, cada file es una sola imagen, así que
-                                                        podrías mandar [asset('storage/'.$file->path)] como array
-                                                     --}}
                                                             <x-image-gallery :images="[asset('storage/' . $file->path)]"
                                                                 class="h-40 rounded-box" />
                                                         @elseif($extension === 'mp4')
@@ -223,7 +217,7 @@
                                                             {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
                                                         </p>
                                                         <p class="text-sm text-gray-700 mt-2">
-                                                            <strong>{{ '('.$file->user->id.') ' . ' - ' . $file->user->name }}</strong>
+                                                            <strong>{{ '(' . $file->user->id . ') - ' . $file->user->name }}</strong>
                                                         </p>
                                                     </div>
                                                 @endforeach
@@ -232,17 +226,29 @@
                                             <p class="text-gray-500">No hay archivos para esta parte.</p>
                                         @endif
 
+                                        <div class="mt-4">
+                                            <x-file wire:model="files" label="Tomar Evidencia" accept="image/*" capture="environment" crop-after-change>
+                                                <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                                    <img src="{{ $files ? $files->temporaryUrl() : asset('storage/picture.png') }}"
+                                                        class="w-full h-full object-cover rounded-lg" />
+                                                </div>
+                                            </x-file>
+                                            <x-button wire:click="uploadEvidence({{ $part->id }})" label="Subir Evidencia" class="btn-primary mt-2" />
+                                        </div>
+
+                                        <br>
+                                        
                                         @if ($vehiculo->operador_id != null)
                                             <x-button wire:click="requestModification('part', {{ $part->id }})"
-                                                label="Solicitar Cambio" icon="o-pencil" class="btn-warning btn-sm"
+                                                label="Solicitar Evidencia" icon="o-pencil" class="btn-warning btn-sm"
                                                 :disabled="$requests
                                                     ->where('type', 'part')
                                                     ->where('parte_id', $part->id)
                                                     ->isNotEmpty()" />
                                         @else
-                                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar cambio
-                                            </p>
+                                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar evidencia</p>
                                         @endif
+                                        
 
                                     </x-slot:content>
                                 </x-collapse>
@@ -250,6 +256,7 @@
                         </div>
                     @endforeach
                 </x-card>
+
                 {{-- Fin de la sección de partes --}}
             </div>
         </x-tab>
@@ -289,6 +296,31 @@
                     @else
                         <p class="text-sm text-gray-500">No hay servicios registrados.</p>
                     @endif
+                </x-card>
+                <x-card title="Registrar Servicio Realizado" class="mb-6">
+                    <form wire:submit.prevent="storeServiceRecord" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {{-- Seleccionar servicio --}}
+                        <div>
+                            <label for="service_id" class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
+                            <select id="service_id" wire:model.defer="service_id" class="form-select rounded-lg border-gray-300 shadow-sm w-full">
+                                <option value="">Selecciona un servicio</option>
+                                @foreach ($availableServices as $service)
+                                    <option value="{{ $service->id }}">{{ $service->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                
+                        {{-- Kilometraje actual --}}
+                        <div>
+                            <label for="current_km" class="block text-sm font-medium text-gray-700 mb-1">Kilometraje del Servicio</label>
+                            <input type="number" id="current_km" wire:model.defer="current_km" class="form-input rounded-lg border-gray-300 shadow-sm w-full" placeholder="Ej. 154500">
+                        </div>
+                
+                        {{-- Botón de guardar --}}
+                        <div class="flex items-end">
+                            <x-button type="submit" label="Guardar Servicio" class="btn-success w-full" icon="o-check-circle" />
+                        </div>
+                    </form>
                 </x-card>
             </div>
         </x-tab>

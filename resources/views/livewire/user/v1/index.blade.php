@@ -36,7 +36,9 @@
                 
                 $initials = '';
                 foreach ($words as $word) {
-                    $initials .= strtoupper($word[0]);
+                    if (!empty($word)) {
+                        $initials .= strtoupper($word[0]);
+                    }
                 }
                 ?>
                 <x-avatar placeholder="{{ $initials }}" class="!w-10" />
@@ -49,7 +51,7 @@
         @endscope
 
         @scope('cell_fecha_nacimiento', $user)
-            <x-badge :value="$user->fecha_nacimiento->format('d-m-Y')" />
+            <x-badge :value="optional($user->fecha_nacimiento)?->format('d/m/Y')" />
         @endscope
 
         @scope('cell_edad', $user)

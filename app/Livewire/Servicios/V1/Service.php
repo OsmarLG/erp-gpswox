@@ -98,8 +98,10 @@ class Service extends Component
 
     public function eliminarDetalle($detalleId)
     {
-        if (Auth::user()->hasRole(['master', 'admin'])) {
-            $detalle = VehicleServiceRecordDetail::findOrFail($detalleId);
+        $detalle = VehicleServiceRecordDetail::findOrFail($detalleId);
+        $isOperador = $detalle->operador_id == Auth::id();
+
+        if (Auth::user()->hasRole(['master', 'admin']) || $isOperador) {
 
             // Eliminar archivos relacionados
             File::where('model_type', VehicleServiceRecordDetail::class)

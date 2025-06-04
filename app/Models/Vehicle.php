@@ -43,6 +43,7 @@ class Vehicle extends Model
         'imei_gps2',
         'vigencia_gps2',
         'saldo_gps2',
+        'get_datos_gpswox',
     ];
 
     /**

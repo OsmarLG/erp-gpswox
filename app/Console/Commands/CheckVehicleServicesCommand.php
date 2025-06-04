@@ -19,7 +19,8 @@ class CheckVehicleServicesCommand extends Command
     public function handle()
     {
         // Obtener todos los vehículos que tengan un gpswox_id válido
-        $vehicles = Vehicle::whereNotNull('gpswox_id')->where('gpswox_id', '!=', '')->get();
+        $vehicles = Vehicle::whereNotNull('gpswox_id')->where('gpswox_id', '!=', '')
+            ->where('get_datos_gpswox', true)->get();
 
         foreach ($vehicles as $vehicle) {
             // Obtener datos del GPSWOX
@@ -51,7 +52,7 @@ class CheckVehicleServicesCommand extends Command
                 // Crear o actualizar el registro de kilometraje del servicio
                 $record = VehicleServiceKilometer::firstOrCreate(
                     ['vehicle_id' => $vehicle->id, 'service_id' => $service->id],
-                    ['last_km' => $odometerValue, 'current_km' => $odometerValue]
+                    ['current_km' => $odometerValue]
                 );
 
                 if ($record->exists) {

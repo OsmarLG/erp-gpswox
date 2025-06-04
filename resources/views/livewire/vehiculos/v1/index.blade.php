@@ -82,6 +82,7 @@
             <x-input label="TAG Número" wire:model="tag_numero" placeholder="TAG Número" clearable />
             <x-input label="TAG Gasolina" wire:model="tag_gasolina_id" placeholder="TAG Gasolina" clearable />
             <x-datetime label="Verificación Vencimiento" wire:model="verificacion_vencimiento" icon="o-calendar" />
+            <x-checkbox label="Obtener datos de GPSWOX" wire:model="get_datos_gpswox" />
 
             <x-slot:actions>
                 <x-button label="Cancelar" @click="$wire.edit_vehicle_modal = false" />
