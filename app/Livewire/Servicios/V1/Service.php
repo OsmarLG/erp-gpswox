@@ -18,7 +18,7 @@ class Service extends Component
     public $idServicio;
     public $servicio;
     public $detalle;
-    public $files = [];
+    public $files;
 
     public function mount($servicio)
     {
@@ -45,7 +45,7 @@ class Service extends Component
     {
         $this->validate([
             'detalle' => 'required|string',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4|max:20480',
+            'files' => 'nullable|file|mimes:jpg,jpeg,png,mp4|max:20480',
         ]);
 
         // Verificar si es el primer detalle agregado y cambiar el estado
@@ -60,18 +60,16 @@ class Service extends Component
             'detalle' => $this->detalle,
         ]);
 
-        // Verificar si hay archivos
-        if (!empty($this->files)) {
-            foreach ($this->files as $file) {
-                $path = $file->store('service_files', 'public');
-                File::create([
-                    'model_type' => VehicleServiceRecordDetail::class,
-                    'model_id' => $detalle->id,
-                    'path' => $path,
-                    'type' => $file->getClientOriginalExtension(),
-                    'operador_id' => Auth::id(),
-                ]);
-            }
+        if ($this->files) {
+            $file = $this->files;
+            $path = $file->store('service_files', 'public');
+            File::create([
+                'model_type' => VehicleServiceRecordDetail::class,
+                'model_id' => $detalle->id,
+                'path' => $path,
+                'type' => $file->getClientOriginalExtension(),
+                'operador_id' => Auth::id(),
+            ]);
         }
 
         // Resetear campos después de guardar
@@ -127,7 +125,7 @@ class Service extends Component
                 ->pluck('path')
                 ->map(fn($path) => asset('storage/' . $path))
                 ->toArray();
-            
+
             // Obtener videos
             $detalle->videos = File::where('model_type', VehicleServiceRecordDetail::class)
                 ->where('model_id', $detalle->id)
@@ -142,5 +140,4 @@ class Service extends Component
             'detalles' => $this->servicio->detalles,
         ]);
     }
-
 }

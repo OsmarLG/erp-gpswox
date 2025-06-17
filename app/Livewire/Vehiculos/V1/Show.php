@@ -32,7 +32,7 @@ class Show extends Component
     public ?string $viewImageModalUrl = null;
     public $newOperatorId;
     public $vin_file = '';
-    public $service_id, $current_km, $availableServices;
+    public $service_id, $last_km, $fecha_realizacion_servicio, $availableServices;
 
     protected $paginationTheme = 'tailwind';
 
@@ -40,12 +40,44 @@ class Show extends Component
     public $selectedPart = '';
     public $files;
 
+    public $nombre_unidad;
+    public $placa;
+    public $tipo_marca;
+    public $vin;
+    public $telefono_seguro;
+    public $get_datos_gpswox;
+    public $no_tarjeta_circulacion;
+    public $vigencia_tarjeta;
+    public $tag_numero;
+    public $tag_gasolina_id;
+    public $verificacion_vencimiento;
+    public $fecha_bateria;
+    public $rines_medida;
+    public $medida_llantas;
+    public $poliza_no;
+    public $compania_seguros;
+    public $poliza_vigencia;
+    public $costo_poliza;
+    public $pago;
+    public $gpswox_id;
+    public $id_gps1;
+    public $tel_gps1;
+    public $imei_gps1;
+    public $vigencia_gps1;
+    public $saldo_gps1;
+    public $id_gps2;
+    public $tel_gps2;
+    public $imei_gps2;
+    public $vigencia_gps2;
+    public $saldo_gps2;
+
     public $vehicleFields = [
+        'nombre_unidad',
         'placa',
         'tipo_marca',
-        'nombre_unidad',
-        'operador_id',
         'vin',
+        'telefono_seguro',
+        'get_datos_gpswox',
         'no_tarjeta_circulacion',
         'vigencia_tarjeta',
         'tag_numero',
@@ -59,7 +91,6 @@ class Show extends Component
         'poliza_vigencia',
         'costo_poliza',
         'pago',
-        'telefono_seguro',
         'gpswox_id',
         'id_gps1',
         'tel_gps1',
@@ -70,7 +101,7 @@ class Show extends Component
         'tel_gps2',
         'imei_gps2',
         'vigencia_gps2',
-        'saldo_gps2',
+        'saldo_gps2'
     ];
 
     public function openViewImageModal($imageUrl)
@@ -89,6 +120,41 @@ class Show extends Component
     {
         $this->vehiculo = $vehiculo;
 
+        $this->nombre_unidad = $vehiculo->nombre_unidad;
+        $this->placa = $vehiculo->placa;
+        $this->tipo_marca = $vehiculo->tipo_marca;
+        $this->vin = $vehiculo->vin;
+        $this->telefono_seguro = $vehiculo->telefono_seguro;
+        $this->get_datos_gpswox = (bool) $vehiculo->get_datos_gpswox;
+        $this->no_tarjeta_circulacion = $vehiculo->no_tarjeta_circulacion;
+        $this->vigencia_tarjeta = $vehiculo->vigencia_tarjeta;
+        $this->tag_numero = $vehiculo->tag_numero;
+        $this->tag_gasolina_id = $vehiculo->tag_gasolina_id;
+        $this->verificacion_vencimiento = $vehiculo->verificacion_vencimiento;
+        $this->fecha_bateria = $vehiculo->fecha_bateria;
+        $this->rines_medida = $vehiculo->rines_medida;
+        $this->medida_llantas = $vehiculo->medida_llantas;
+        $this->poliza_no = $vehiculo->poliza_no;
+        $this->compania_seguros = $vehiculo->compania_seguros;
+        $this->poliza_vigencia = $vehiculo->poliza_vigencia;
+        $this->costo_poliza = $vehiculo->costo_poliza;
+        $this->pago = $vehiculo->pago;
+        $this->gpswox_id = $vehiculo->gpswox_id;
+        $this->id_gps1 = $vehiculo->id_gps1;
+        $this->tel_gps1 = $vehiculo->tel_gps1;
+        $this->imei_gps1 = $vehiculo->imei_gps1;
+        $this->vigencia_gps1 = $vehiculo->vigencia_gps1;
+        $this->saldo_gps1 = $vehiculo->saldo_gps1;
+        $this->id_gps2 = $vehiculo->id_gps2;
+        $this->tel_gps2 = $vehiculo->tel_gps2;
+        $this->imei_gps2 = $vehiculo->imei_gps2;
+        $this->vigencia_gps2 = $vehiculo->vigencia_gps2;
+        $this->saldo_gps2 = $vehiculo->saldo_gps2;
+
+        foreach ($this->vehicleFields as $field) {
+            $this->{$field} = $vehiculo->{$field};
+        }
+
         // Obtener datos del GPSWOX
         $response = HttpRequestService::makeRequest('post', HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
             'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
@@ -100,6 +166,30 @@ class Show extends Component
             ->firstWhere('type', 'odometer')['val'] ?? null;
 
         $this->availableServices = Servicio::all();
+    }
+
+    public function saveVehicleFields()
+    {
+        if (!auth()->user()->hasRole(['admin', 'master'])) {
+            abort(403);
+        }
+
+        $data = [];
+
+        foreach ($this->vehicleFields as $field) {
+            $data[$field] = $this->{$field};
+        }
+
+        $this->vehiculo->update($data);
+
+        $this->toast(
+            type: 'success',
+            title: 'Actualizado',
+            description: 'Los campos del vehículo fueron actualizados.',
+            icon: 'o-check-circle',
+            css: 'alert-success text-white text-sm',
+            timeout: 3000,
+        );
     }
 
     public function uploadEvidence($partId)
@@ -174,7 +264,7 @@ class Show extends Component
                 // Enviar notificación al nuevo operador
                 if ($this->newOperatorId) {
                     $newOperator = User::find($this->newOperatorId);
-                    if ($newOperator) {
+                    if ($newOperator && $serviceRecord->service && $serviceRecord->service->notificar == true) {
                         $newOperator->notify(new ServiceNotification($this->vehiculo, $serviceRecord->service));
                     }
                 }
@@ -191,7 +281,7 @@ class Show extends Component
                 // Enviar notificación al nuevo operador
                 if ($this->newOperatorId) {
                     $newOperator = User::find($this->newOperatorId);
-                    if ($newOperator) {
+                    if ($newOperator && $request->type == 'part' && $request->service && $request->service->notificar == true) {
                         // $newOperator->notify(new RequestNotification($this->vehiculo, $request->type));
                     }
                 }
@@ -361,7 +451,8 @@ class Show extends Component
     {
         $this->validate([
             'service_id' => 'required|exists:servicios,id',
-            'current_km' => 'required|numeric|min:0',
+            'last_km' => 'required|numeric|min:0',
+            'fecha_realizacion_servicio' => 'required|date',
         ]);
 
         $record = VehicleServiceRecord::create([
@@ -369,15 +460,14 @@ class Show extends Component
             'service_id' => $this->service_id,
             'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
             'status' => 'completed',
-            'fecha_realizacion' => now(),
+            'fecha_realizacion' => $this->fecha_realizacion_servicio,
         ]);
 
-        VehicleServiceKilometer::updateOrCreate ([
+        VehicleServiceKilometer::updateOrCreate([
             'vehicle_id' => $this->vehiculo->id,
             'service_id' => $this->service_id,
         ], [
-            'last_km' => $this->current_km,
-            'current_km' => $this->odometerValue,
+            'last_km' => $this->last_km,
         ]);
 
         VehicleServiceRecordDetail::create([
@@ -386,7 +476,7 @@ class Show extends Component
             'detalle' => 'Servicio registrado',
         ]);
 
-        $this->reset(['service_id', 'current_km']);
+        $this->reset(['service_id', 'last_km', 'fecha_realizacion_servicio']);
 
         $this->toast('success', 'Servicio registrado', 'El servicio fue guardado correctamente.');
     }

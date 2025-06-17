@@ -21,8 +21,11 @@ class Request extends Component
     public $fieldValue;
 
     // Para 'part'
-    public $files = [];
-    public $fileDescriptions = []; // Descripciones opcionales
+    public $files;
+    public $fileDescriptions; // Descripciones opcionales
+
+    public $videos;
+    public $videoDescriptions; // Descripciones opcionales
 
     public function mount($request)
     {
@@ -32,7 +35,7 @@ class Request extends Component
         // Validar permisos
         $usuario = Auth::user();
         if (
-            !$usuario->hasRole(['master','admin']) &&
+            !$usuario->hasRole(['master', 'admin']) &&
             $this->request->operador_id !== $usuario->id
         ) {
             abort(403, 'No tienes permiso para ver esta solicitud.');
@@ -82,26 +85,38 @@ class Request extends Component
         }
 
         $this->validate([
-            'files.*' => 'required|file|mimes:jpg,jpeg,png,mp4|max:20480',
+            'files' => 'required|file|mimes:jpg,jpeg,png|max:20480',
+            'videos' => 'required|file|mimes:mp4|max:20480',
         ]);
 
         if ($this->request->type === 'part') {
-            foreach ($this->files as $index => $file) {
-                $path = $file->store('vehicle_request_files', 'public');
-
+            if ($this->files) {
+                $path = $this->files->store('vehicle_request_files', 'public');
                 File::create([
                     'model_type'  => VehicleRequest::class,
                     'model_id'    => $this->request->id,
                     'path'        => $path,
-                    'type'        => $file->getClientOriginalExtension(),
+                    'type'        => $this->files->getClientOriginalExtension(),
                     'operador_id' => Auth::id(),
-                    'description' => $this->fileDescriptions[$index] ?? null,
+                    'description' => $this->fileDescriptions ?? null,
+                ]);
+            }
+
+            if ($this->videos) {
+                $path = $this->videos->store('vehicle_request_files', 'public');
+                File::create([
+                    'model_type'  => VehicleRequest::class,
+                    'model_id'    => $this->request->id,
+                    'path'        => $path,
+                    'type'        => $this->videos->getClientOriginalExtension(),
+                    'operador_id' => Auth::id(),
+                    'description' => $this->fileDescriptions ?? null,
                 ]);
             }
 
             $this->request->update(['status' => 'finished']);
 
-            $this->reset('files', 'fileDescriptions');
+            $this->reset('files', 'videos', 'fileDescriptions');
             $this->success('Archivos subidos correctamente.');
         }
     }
@@ -111,7 +126,7 @@ class Request extends Component
      */
     public function finalizarSolicitud()
     {
-        if (Auth::user()->hasRole(['master','admin'])) {
+        if (Auth::user()->hasRole(['master', 'admin'])) {
             $this->request->update(['status' => 'accepted']);
             $this->success('Solicitud finalizada con éxito!');
         }
@@ -132,7 +147,7 @@ class Request extends Component
     public function reabrirSolicitud()
     {
         if (
-            Auth::user()->hasRole(['master','admin']) &&
+            Auth::user()->hasRole(['master', 'admin']) &&
             $this->request->status === 'finished'
         ) {
             $this->request->update(['status' => 'initiated']);
@@ -149,7 +164,7 @@ class Request extends Component
 
         // Permitir si es admin/master o si el file->operador_id == current user
         if (
-            Auth::user()->hasRole(['master','admin']) ||
+            Auth::user()->hasRole(['master', 'admin']) ||
             $file->operador_id === Auth::id()
         ) {
             $file->delete();

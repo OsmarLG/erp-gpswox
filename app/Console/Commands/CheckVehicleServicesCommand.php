@@ -19,8 +19,11 @@ class CheckVehicleServicesCommand extends Command
     public function handle()
     {
         // Obtener todos los vehículos que tengan un gpswox_id válido
-        $vehicles = Vehicle::whereNotNull('gpswox_id')->where('gpswox_id', '!=', '')
-            ->where('get_datos_gpswox', true)->get();
+        $vehicles = Vehicle::whereNotNull('gpswox_id')
+            ->where('gpswox_id', '!=', '')
+            ->where('get_datos_gpswox', true)
+            ->whereNotNull('operador_id')
+            ->get();
 
         foreach ($vehicles as $vehicle) {
             // Obtener datos del GPSWOX
@@ -61,32 +64,40 @@ class CheckVehicleServicesCommand extends Command
 
                 $serviceRecordCreated = false;
 
+                // Obtener último registro de servicio
+                $lastRecord = VehicleServiceRecord::where('vehicle_id', $vehicle->id)
+                    ->where('service_id', $service->id)
+                    ->latest('created_at')
+                    ->first();
+
                 // Verificar periodicidad por kilometraje
                 if ($service->periodicidad_km !== null) {
                     $km_difference = $record->current_km - $record->last_km;
 
                     if ($km_difference >= $service->periodicidad_km) {
-                        $this->info('yes');
+                        $this->info("Servicio por KM activado: {$service->nombre} en {$vehicle->placa}");
                         $this->createServiceRecord($vehicle, $service);
-                        $record->update(['last_km' => $record->current_km]); // Actualizar `last_km`
+                        $record->update(['last_km' => $record->current_km]);
                         $serviceRecordCreated = true;
                     }
                 }
 
-                // Verificar periodicidad por días solo si no se ha creado ya un registro y si tiene periodicidad por días
+                // Verificar periodicidad por días si aplica
                 if (!$serviceRecordCreated && $service->periodicidad_dias !== null) {
-                    $lastRecord = VehicleServiceRecord::where('vehicle_id', $vehicle->id)
-                        ->where('service_id', $service->id)
-                        // ->where('status', 'finished')
-                        ->latest('created_at')
-                        ->first();
-
                     if (
                         !$lastRecord ||
-                        now()->diffInDays($lastRecord->created_at) >= $service->periodicidad_dias
+                        now()->diffInDays($lastRecord->fecha_realizacion) >= $service->periodicidad_dias
                     ) {
+                        $this->info("Servicio por días activado: {$service->nombre} en {$vehicle->placa}");
                         $this->createServiceRecord($vehicle, $service);
+                        $serviceRecordCreated = true;
                     }
+                }
+
+                // Si no hay registros previos y no tiene periodicidad en días pero sí en KM, crear uno inicial
+                if (!$serviceRecordCreated && !$lastRecord && $service->periodicidad_dias === null && $service->periodicidad_km !== null) {
+                    $this->info("Creando primer registro por KM (sin días): {$service->nombre} en {$vehicle->placa}");
+                    $this->createServiceRecord($vehicle, $service);
                 }
             }
         }
@@ -105,7 +116,7 @@ class CheckVehicleServicesCommand extends Command
         );
 
         // Verificar si el servicio tiene `notificar` en true antes de enviar la notificación
-        if ($service->notificar && $vehicle->operador_id) {
+        if ($service->notificar == true && $vehicle->operador_id) {
             $vehicle->operador->notify(new ServiceNotification($vehicle, $service));
             $this->info("Notificación enviada al operador del vehículo {$vehicle->placa} para el servicio {$service->nombre}.");
         } else {

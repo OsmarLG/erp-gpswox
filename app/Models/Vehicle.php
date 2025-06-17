@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\HttpRequestService;
 
 class Vehicle extends Model
 {
@@ -46,6 +47,10 @@ class Vehicle extends Model
         'get_datos_gpswox',
     ];
 
+    protected $casts = [
+        'get_datos_gpswox' => 'boolean',
+    ];
+
     /**
      * Relación con el operador (user).
      */
@@ -72,9 +77,34 @@ class Vehicle extends Model
         return $this->hasMany(ServiceRequest::class, 'vehicle_id');
     }
 
+    public function getOdometroAttribute()
+    {
+        return $this->kilometraje_gpswox ?? $this->kilometraje;
+    }
+
     public function getKilometrajeAttribute()
     {
         $km = $this->hasMany(VehicleServiceKilometer::class, 'vehicle_id')->first();
         return $km->current_km ?? $km->last_km ?? 0;
+    }
+
+    public function getKilometrajeGpswoxAttribute()
+    {
+        if (!$this->gpswox_id) {
+            return 0;
+        }
+
+        try {
+            $response = HttpRequestService::makeRequest('post', HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
+                'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
+                'id' => $this->gpswox_id,
+            ]);
+
+            return collect($response[0]['items'][0]['sensors'] ?? [])
+                ->firstWhere('type', 'odometer')['val'] ?? 0;
+        } catch (\Throwable $e) {
+            report($e);
+            return 0;
+        }
     }
 }

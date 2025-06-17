@@ -10,6 +10,7 @@ use Livewire\WithPagination;
 use App\Models\VehicleServiceRecord;
 use App\Models\VehicleOperatorHistory;
 use App\Notifications\ServiceNotification;
+use App\Services\HttpRequestService;
 
 class Index extends Component
 {
@@ -40,6 +41,8 @@ class Index extends Component
 
     public bool $continuarCreando = false;
 
+    public array $odometros = [];
+
     // Cabeceras de la tabla
     public array $headers = [
         ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
@@ -47,7 +50,7 @@ class Index extends Component
         ['key' => 'placa', 'label' => 'Placa', 'class' => 'text-black dark:text-white'],
         ['key' => 'tipo_marca', 'label' => 'Tipo/Marca', 'class' => 'text-black dark:text-white'],
         ['key' => 'operador.name', 'label' => 'Operador', 'class' => 'text-black dark:text-white'],
-        ['key' => 'kilometraje', 'label' => 'Podometro', 'class' => 'text-black dark:text-white'],
+        ['key' => 'KilometrajeGpswox', 'label' => 'Odometro', 'class' => 'text-black dark:text-white'],
         ['key' => 'gpswox_id', 'label' => 'ID GPSWOX', 'class' => 'text-black dark:text-white'],
     ];
     public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
@@ -311,6 +314,20 @@ class Index extends Component
         $vehicles = Vehicle::where('nombre_unidad', 'like', '%' . $this->search . '%')
             ->orderBy(...array_values($this->sortBy))
             ->paginate(10);
+
+        foreach ($vehicles as $vehiculo) {
+            if ($vehiculo->get_datos_gpswox && $vehiculo->gpswox_id) {
+                $response = HttpRequestService::makeRequest('post', HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
+                    'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
+                    'id' => $vehiculo->gpswox_id,
+                ]);
+
+                $this->odometros[$vehiculo->id] = collect($response[0]['items'][0]['sensors'] ?? [])
+                    ->firstWhere('type', 'odometer')['val'] ?? 'N/A';
+            } else {
+                $this->odometros[$vehiculo->id] = 'N/A';
+            }
+        }
 
         return view('livewire.vehiculos.v1.index', [
             'headers' => $this->headers,

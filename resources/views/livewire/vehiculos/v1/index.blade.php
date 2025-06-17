@@ -24,6 +24,10 @@
     {{-- Tabla --}}
     <x-table :headers="$headers" :rows="$vehicles" :sort-by="$sortBy" striped with-pagination>
 
+        @scope('cell_KilometrajeGpswox', $vehiculo)
+            {{ $vehiculo->kilometraje_gpswox . ' Km' ?? 'N/A' }}
+        @endscope   
+
         {{-- Sobrescribe las acciones --}}
         @scope('actions', $vehiculo)
             <div class="flex gap-2">

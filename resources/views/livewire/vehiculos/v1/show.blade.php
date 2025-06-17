@@ -3,6 +3,7 @@
     {{ $path = implode(' / ', array_map('ucfirst', explode('/', request()->path()))) }}
 
     <h2 class="text-2xl font-bold text-center mb-6">Detalles de {{ $vehiculo->nombre_unidad }}</h2>
+    <h4 class="text-2xl font-bold text-center mb-6">Odometro: {{ $odometerValue }}</h4>
 
     {{-- Mostrar info de operador si existe --}}
     @if ($vehiculo->operador)
@@ -50,7 +51,8 @@
     <x-tabs wire:model="selectedTab">
         <x-tab name="info-tab" label="Detalles Generales" icon="o-information-circle">
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <x-card title="Solicitar Modificación de Información General">
+                {{-- Solicitud de modificación --}}
+                {{-- <x-card title="Solicitar Modificación de Información General">
                     <div class="flex items-center gap-4">
                         <select wire:model="selectedField"
                             class="form-select rounded-lg border-gray-300 shadow-sm w-1/2">
@@ -62,18 +64,13 @@
                             @endforeach
                         </select>
 
-                        {{-- Botón para solicitar cambio --}}
-                        @if ($vehiculo->operador_id != null)
-                            <x-button wire:click="requestModification('field', {{ $selectedField }})"
-                                label="Solicitar Cambio" icon="o-pencil" class="btn-warning" />
-                        @else
-                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar cambio</p>
-                        @endif
+                        <x-button wire:click="requestModification('field', '')"
+                            label="Solicitar Cambio" class="btn-warning" />
                     </div>
-                </x-card>
+                </x-card> --}}
 
-                {{-- Fin de la sección de campos --}}
-                <x-card title="Solicitudes Pendientes de Información General">
+                {{-- Solicitudes pendientes --}}
+                {{-- <x-card title="Solicitudes Pendientes de Información General">
                     @if ($requests->where('type', 'field')->count())
                         <table class="table-auto w-full text-sm text-left">
                             <thead>
@@ -91,7 +88,7 @@
                                         <td>{{ $request->operador->name }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
-                                            @if ($request->status === 'initiated' || $request->status === 'pending')
+                                            @if (in_array($request->status, ['initiated', 'pending']))
                                                 <x-button wire:click="showRequest({{ $request->id }})" icon="o-cog"
                                                     label="Ver" class="btn-primary btn-sm" />
 
@@ -106,45 +103,70 @@
                     @else
                         <p class="text-sm text-gray-500">No hay solicitudes pendientes.</p>
                     @endif
+                </x-card> --}}
+
+                {{-- Campos editables por categoría --}}
+                <x-card title="Información General">
+                    <x-input label="Nombre Unidad" wire:model.defer="nombre_unidad" />
+                    <x-input label="Placa" wire:model.defer="placa" />
+                    <x-input label="Tipo Marca" wire:model.defer="tipo_marca" />
+                    <x-input label="VIN" wire:model.defer="vin" />
+                    <x-input label="Teléfono Seguro" wire:model.defer="telefono_seguro" />
+                    <br>
+                    <x-checkbox label="Recibir Datos de GPSWOX" wire:model.defer="get_datos_gpswox" />
                 </x-card>
 
-                <x-card title="Información General">
-                    <p><strong>Nombre Unidad:</strong> {{ $vehiculo->nombre_unidad ?? 'N/A' }}</p>
-                    <p><strong>Placa:</strong> {{ $vehiculo->placa ?? 'N/A' }}</p>
-                    <p><strong>Tipo/Marca:</strong> {{ $vehiculo->tipo_marca ?? 'N/A' }}</p>
-                    <p><strong>VIN:</strong> {{ $vehiculo->vin ?? 'N/A' }}</p>
-                    <p><strong>ID GPS WOX:</strong> {{ $vehiculo->gpswox_id ?? 'N/A' }}</p>
-                    <p><strong>Odómetro:</strong>
-                        {{ $odometerValue ? number_format($odometerValue, 2) . ' km' : 'No disponible' }}</p>
-                    <p><strong>Teléfono Seguro:</strong> {{ $vehiculo->telefono_seguro ?? 'N/A' }}</p>
-                    <p><strong>TAG Gasolina ID:</strong> {{ $vehiculo->tag_gasolina_id ?? 'N/A' }}</p>
-                    <p><strong>Recibir Datos de GPSWOX:</strong> {{ $vehiculo->get_datos_gpswox ? 'Sí' : 'No' }}</p>
+                <x-card title="Información Tarjeta y TAG">
+                    <x-input label="No. Tarjeta de Circulación" wire:model.defer="no_tarjeta_circulacion" />
+                    <x-datetime label="Vigencia Tarjeta" wire:model.defer="vigencia_tarjeta" />
+                    <x-input label="Tag Número" wire:model.defer="tag_numero" />
+                    <x-input label="TAG Gasolina ID" wire:model.defer="tag_gasolina_id" />
                 </x-card>
-                <x-card title="Información de Documentación">
-                    <p><strong>No. Tarjeta de Circulación:</strong> {{ $vehiculo->no_tarjeta_circulacion ?? 'N/A' }}
-                    </p>
-                    <p><strong>Vigencia:</strong> {{ $vehiculo->vigencia_tarjeta ?? 'N/A' }}</p>
-                    <p><strong>No. Tag:</strong> {{ $vehiculo->tag_numero ?? 'N/A' }}</p>
-                    <p><strong>Verificación Vencimiento:</strong> {{ $vehiculo->verificacion_vencimiento ?? 'N/A' }}
-                    </p>
-                    <p><strong>Poliza No:</strong> {{ $vehiculo->poliza_no ?? 'N/A' }}</p>
-                    <p><strong>Compañía Seguros:</strong> {{ $vehiculo->compania_seguros ?? 'N/A' }}</p>
-                    <p><strong>Poliza Vigencia:</strong> {{ $vehiculo->poliza_vigencia ?? 'N/A' }}</p>
-                    <p><strong>Poliza Costo:</strong> {{ $vehiculo->costo_poliza ?? 'N/A' }}</p>
+
+                <x-card title="Información Verificación y Batería">
+                    <x-datetime label="Verificación Vencimiento" wire:model.defer="verificacion_vencimiento" />
+                    <x-datetime label="Fecha Batería" wire:model.defer="fecha_bateria" />
                 </x-card>
-                <x-card title="Información de GPS">
-                    <p><strong>ID GPS 1:</strong> {{ $vehiculo->id_gps1 ?? 'N/A' }}</p>
-                    <p><strong>Teléfono GPS 1:</strong> {{ $vehiculo->tel_gps1 ?? 'N/A' }}</p>
-                    <p><strong>IMEI GPS 1:</strong> {{ $vehiculo->imei_gps1 ?? 'N/A' }}</p>
-                    <p><strong>Vigencia GPS 1:</strong> {{ $vehiculo->vigencia_gps1 ?? 'N/A' }}</p>
-                    <p><strong>Saldo GPS 1:</strong> {{ $vehiculo->saldo_gps1 ?? 'N/A' }}</p>
-                    <p><strong>ID GPS 2:</strong> {{ $vehiculo->id_gps2 ?? 'N/A' }}</p>
-                    <p><strong>Teléfono GPS 2:</strong> {{ $vehiculo->tel_gps2 ?? 'N/A' }}</p>
-                    <p><strong>IMEI GPS 2:</strong> {{ $vehiculo->imei_gps2 ?? 'N/A' }}</p>
-                    <p><strong>Vigencia GPS 2:</strong> {{ $vehiculo->vigencia_gps2 ?? 'N/A' }}</p>
-                    <p><strong>Saldo GPS 2:</strong> {{ $vehiculo->saldo_gps2 ?? 'N/A' }}</p>
+
+                <x-card title="Información Llantas y Rines">
+                    <x-input label="Rines Medida" wire:model.defer="rines_medida" />
+                    <x-input label="Medida Llantas" wire:model.defer="medida_llantas" />
+                </x-card>
+
+                <x-card title="Información Póliza">
+                    <x-input label="Póliza No." wire:model.defer="poliza_no" />
+                    <x-input label="Compañía Seguros" wire:model.defer="compania_seguros" />
+                    <x-datetime label="Vigencia Póliza" wire:model.defer="poliza_vigencia" />
+                    <x-input label="Costo Póliza" wire:model.defer="costo_poliza" prefix="MXN" money />
+                </x-card>
+
+                <x-card title="Información GPSWOX">
+                    <x-input label="ID GPSWOX" wire:model.defer="gpswox_id" />
+                </x-card>
+
+                <x-card title="GPS 1">
+                    <x-input label="ID GPS 1" wire:model.defer="id_gps1" />
+                    <x-input label="Teléfono GPS 1" wire:model.defer="tel_gps1" />
+                    <x-input label="IMEI GPS 1" wire:model.defer="imei_gps1" />
+                    <x-datetime label="Vigencia GPS 1" wire:model.defer="vigencia_gps1" />
+                    <x-input label="Saldo GPS 1" wire:model.defer="saldo_gps1" />
+                </x-card>
+
+                <x-card title="GPS 2">
+                    <x-input label="ID GPS 2" wire:model.defer="id_gps2" />
+                    <x-input label="Teléfono GPS 2" wire:model.defer="tel_gps2" />
+                    <x-input label="IMEI GPS 2" wire:model.defer="imei_gps2" />
+                    <x-datetime label="Vigencia GPS 2" wire:model.defer="vigencia_gps2" />
+                    <x-input label="Saldo GPS 2" wire:model.defer="saldo_gps2" />
                 </x-card>
             </div>
+
+            @if (auth()->user()->hasRole(['master', 'admin']))
+                <div class="col-span-2 flex justify-end">
+                    <x-button wire:click="saveVehicleFields" label="Guardar Cambios" class="btn-success mt-4"
+                        icon="o-check-circle" />
+                </div>
+            @endif
         </x-tab>
 
         <x-tab name="partes-tab" label="Partes del Vehículo" icon="o-truck">
@@ -168,8 +190,8 @@
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
                                             @if ($request->status === 'initiated' || $request->status === 'pending')
-                                                <x-button wire:click="showRequest({{ $request->id }})" icon="o-cog"
-                                                    label="Ver" class="btn-primary btn-sm" />
+                                                <x-button wire:click="showRequest({{ $request->id }})"
+                                                    icon="o-cog" label="Ver" class="btn-primary btn-sm" />
 
                                                 <x-button wire:click="deleteRequest({{ $request->id }})"
                                                     label="Eliminar" icon="o-trash" class="btn-error btn-sm" />
@@ -214,11 +236,30 @@
                                                         @endif
 
                                                         <p class="text-sm text-gray-700 mt-2">
-                                                            {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
+                                                        <p class="text-sm text-gray-700 mt-2">
+                                                            <strong>
+                                                                @if ($file->user)
+                                                                    ({{ $file->user->id }})
+                                                                    - {{ $file->user->name }}
+                                                                @else
+                                                                    N/A
+                                                                @endif
+                                                            </strong>
                                                         </p>
                                                         <p class="text-sm text-gray-700 mt-2">
-                                                            <strong>{{ '(' . $file->user->id . ') - ' . $file->user->name }}</strong>
+                                                            {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
                                                         </p>
+                                                        </p>
+                                                        <p class="text-sm text-gray-700 mt-2">
+                                                            <strong>
+                                                                @if ($file->user)
+                                                                    ({{ $file->user->id }}) - {{ $file->user->name }}
+                                                                @else
+                                                                    N/A
+                                                                @endif
+                                                            </strong>
+                                                        </p>
+
                                                     </div>
                                                 @endforeach
                                             </ul>
@@ -227,28 +268,32 @@
                                         @endif
 
                                         <div class="mt-4">
-                                            <x-file wire:model="files" label="Tomar Evidencia" accept="image/*" capture="environment" crop-after-change>
-                                                <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
+                                            <x-file wire:model="files" label="Tomar Evidencia" accept="image/*"
+                                                capture="environment" crop-after-change>
+                                                <div
+                                                    class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
                                                     <img src="{{ $files ? $files->temporaryUrl() : asset('storage/picture.png') }}"
                                                         class="w-full h-full object-cover rounded-lg" />
                                                 </div>
                                             </x-file>
-                                            <x-button wire:click="uploadEvidence({{ $part->id }})" label="Subir Evidencia" class="btn-primary mt-2" />
+                                            <x-button wire:click="uploadEvidence({{ $part->id }})"
+                                                label="Subir Evidencia" class="btn-primary mt-2" />
                                         </div>
 
                                         <br>
-                                        
+
                                         @if ($vehiculo->operador_id != null)
                                             <x-button wire:click="requestModification('part', {{ $part->id }})"
-                                                label="Solicitar Evidencia" icon="o-pencil" class="btn-warning btn-sm"
-                                                :disabled="$requests
+                                                label="Solicitar Evidencia" icon="o-pencil"
+                                                class="btn-warning btn-sm" :disabled="$requests
                                                     ->where('type', 'part')
                                                     ->where('parte_id', $part->id)
                                                     ->isNotEmpty()" />
                                         @else
-                                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar evidencia</p>
+                                            <p class="text-sm text-gray-500">Seleccionar operador para solicitar
+                                                evidencia</p>
                                         @endif
-                                        
+
 
                                     </x-slot:content>
                                 </x-collapse>
@@ -301,24 +346,38 @@
                     <form wire:submit.prevent="storeServiceRecord" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {{-- Seleccionar servicio --}}
                         <div>
-                            <label for="service_id" class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-                            <select id="service_id" wire:model.defer="service_id" class="form-select rounded-lg border-gray-300 shadow-sm w-full">
+                            <label for="service_id"
+                                class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
+                            <select id="service_id" wire:model.defer="service_id"
+                                class="form-select rounded-lg border-gray-300 shadow-sm w-full">
                                 <option value="">Selecciona un servicio</option>
                                 @foreach ($availableServices as $service)
                                     <option value="{{ $service->id }}">{{ $service->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
-                
+
                         {{-- Kilometraje actual --}}
                         <div>
-                            <label for="current_km" class="block text-sm font-medium text-gray-700 mb-1">Kilometraje del Servicio</label>
-                            <input type="number" id="current_km" wire:model.defer="current_km" class="form-input rounded-lg border-gray-300 shadow-sm w-full" placeholder="Ej. 154500">
+                            <label for="last_km" class="block text-sm font-medium text-gray-700 mb-1">Kilometraje
+                                del Servicio</label>
+                            <input type="number" id="last_km" wire:model.defer="last_km"
+                                class="form-input rounded-lg border-gray-300 shadow-sm w-full"
+                                placeholder="Ej. 154500">
                         </div>
-                
+                        <br>
+                        {{-- Fecha de realización --}}
+                        <div>
+                            <label for="fecha_realizacion_servicio"
+                                class="block text-sm font-medium text-gray-700 mb-1">Fecha de
+                                Realización</label>
+                            <x-datetime wire:model.defer="fecha_realizacion_servicio" />
+                        </div>
+                        <br>
                         {{-- Botón de guardar --}}
                         <div class="flex items-end">
-                            <x-button type="submit" label="Guardar Servicio" class="btn-success w-full" icon="o-check-circle" />
+                            <x-button type="submit" label="Guardar Servicio" class="btn-success w-full"
+                                icon="o-check-circle" />
                         </div>
                     </form>
                 </x-card>
@@ -332,10 +391,18 @@
                     <ul>
                         @foreach ($vehiculo->operatorHistory->sortByDesc('created_at') as $history)
                             <li>
-                                Nombre: {{ $history->operador->name ?? 'N/A' }} -
-                                Fecha Asignación: {{ $history->fecha_asignacion->format('d-m-Y') }}
+                                <p>
+                                    <strong>Nombre:</strong> {{ $history->operador->name ?? 'N/A' }}
+                                </p>
+                                <p>
+                                    <strong>Fecha Asignación:</strong>
+                                    {{ optional($history->fecha_asignacion)->format('d-m-Y') }}
+                                </p>
                                 @isset($history->fecha_liberacion)
-                                    - Fecha Liberación: {{ $history->fecha_liberacion->format('d-m-Y') }}
+                                    <p>
+                                        <strong>Fecha Liberación:</strong>
+                                        {{ optional($history->fecha_liberacion)->format('d-m-Y') }}
+                                    </p>
                                 @endisset
                             </li>
                         @endforeach
@@ -345,10 +412,10 @@
         </x-tab>
 
         <x-tab name="requests-tab" label="Solicitudes de Servicio" icon="o-inbox">
-            <div class="mt-4">
+            <div class="mt-4 overflow-x-auto">
                 <x-card title="Solicitudes Pendientes">
                     @if ($vehiculo->serviceRequests->count())
-                        <table class="table-auto w-full text-sm text-left">
+                        <table class="min-w-full text-sm text-left table-auto">
                             <thead>
                                 <tr>
                                     <th>Servicio</th>
@@ -360,8 +427,8 @@
                             <tbody>
                                 @foreach ($vehiculo->serviceRequests as $request)
                                     <tr>
-                                        <td>{{ $request->service->nombre }}</td>
-                                        <td>{{ $request->operador->name }}</td>
+                                        <td>{{ optional($request->service)->nombre ?? 'N/A' }}</td>
+                                        <td>{{ optional($request->operador)->name ?? 'N/A' }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
                                             @if ($request->status === 'pending')
@@ -377,12 +444,16 @@
                                 @endforeach
                             </tbody>
                         </table>
+
+                        {{-- Paginación si aplica --}}
+                        {{-- {{ $vehiculo->serviceRequests->links() }} --}}
                     @else
                         <p class="text-sm text-gray-500">No hay solicitudes pendientes.</p>
                     @endif
                 </x-card>
             </div>
         </x-tab>
+
     </x-tabs>
 
     {{-- Modal para ver imagen en pantalla completa --}}

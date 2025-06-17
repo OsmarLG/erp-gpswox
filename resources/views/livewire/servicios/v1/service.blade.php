@@ -72,7 +72,7 @@
                     <template x-if="role === 'master' || role === 'admin' || (role === 'operador' && isMobile)">
                         <x-file wire:model="files" label="Tomar Foto" accept="image/*" capture="environment" crop-after-change>
                             <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
-                                <img src="{{ $files ? $files->temporaryUrl() : asset('storage/picture.png') }}"
+                                <img src="{{ is_array($files) && isset($files[0]) ? $files[0]->temporaryUrl() : asset('storage/picture.png') }}"
                                     class="w-full h-full object-cover rounded-lg" />
                             </div>
                         </x-file>
