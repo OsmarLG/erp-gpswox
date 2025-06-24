@@ -13,6 +13,8 @@ class ServiceRequest extends Model
         'vehicle_id',
         'service_id',
         'operador_id',
+        'notas_operador',
+        'notas_admin',
         'status',
     ];
 

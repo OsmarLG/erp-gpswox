@@ -5,7 +5,10 @@ namespace App\Livewire\Servicios\V1;
 use App\Models\VehicleServiceRecord;
 use Livewire\Component;
 use App\Models\VehicleServiceRecordDetail;
+use App\Models\VehicleServiceRecordDetailArchivo;
 use App\Models\File;
+use App\Models\VehicleServiceKilometer;
+use App\Services\HttpRequestService;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Mary\Traits\Toast;
@@ -17,6 +20,8 @@ class Service extends Component
 
     public $idServicio;
     public $servicio;
+    public $servicioAnterior;
+    public $servicioSiguiente;
     public $detalle;
     public $files;
 
@@ -24,6 +29,36 @@ class Service extends Component
     {
         $this->idServicio = $servicio;
         $this->servicio = VehicleServiceRecord::findOrFail($servicio);
+
+        // Servicio Anterior
+        $this->servicioAnterior = VehicleServiceRecord::query()
+            ->where('vehicle_id', $this->servicio->vehicle_id)
+            ->where('service_id', $this->servicio->service_id)
+            ->where('status', 'completed')
+            ->where('id', '!=', $this->servicio->id)
+            ->when(!is_null($this->servicio->fecha_realizacion), function ($query) {
+                $query->where('fecha_realizacion', '<', $this->servicio->fecha_realizacion);
+            })
+            ->orderBy('fecha_realizacion', 'desc')
+            ->first();
+
+        // Servicio Siguiente
+        $this->servicioSiguiente = VehicleServiceRecord::query()
+            ->where('vehicle_id', $this->servicio->vehicle_id)
+            ->where('service_id', $this->servicio->service_id)
+            ->where('status', 'completed')
+            ->where('id', '!=', $this->servicio->id)
+            ->when(!is_null($this->servicio->fecha_realizacion), function ($query) {
+                $query->where('fecha_realizacion', '>', $this->servicio->fecha_realizacion);
+            })
+            ->orderBy('fecha_realizacion', 'asc')
+            ->first();
+
+        // $ultimoServicioTabla = VehicleServiceRecord::where('status', 'completed')
+        //     ->orderBy('created_at', 'desc')
+        //     ->first();
+
+        // dd($this->idServicio, $this->servicio, $this->servicioAnterior, $ultimoServicioTabla);
 
         $usuario = Auth::user();
 
@@ -62,13 +97,13 @@ class Service extends Component
 
         if ($this->files) {
             $file = $this->files;
-            $path = $file->store('service_files', 'public');
-            File::create([
-                'model_type' => VehicleServiceRecordDetail::class,
-                'model_id' => $detalle->id,
+            $path = $file->store('service_archivos', 'public');
+            VehicleServiceRecordDetailArchivo::create([
                 'path' => $path,
-                'type' => $file->getClientOriginalExtension(),
+                'description' => $this->detalle,
+                'vehicle_service_record_detail_id' => $detalle->id,
                 'operador_id' => Auth::id(),
+                'type' => $file->getClientOriginalExtension(),
             ]);
         }
 
@@ -80,7 +115,25 @@ class Service extends Component
     public function finalizarServicio()
     {
         if (Auth::user()->hasRole(['master', 'admin'])) {
-            $this->servicio->update(['status' => 'completed', 'fecha_realizacion' => now()]);
+
+            // Obtener datos del GPSWOX
+            $response = HttpRequestService::makeRequest('post', HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
+                'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
+                'id' => $this->servicio->vehicle->gpswox_id,
+            ]);
+
+            // Filtrar el sensor de odómetro
+            $odometerValue = collect($response[0]['items'][0]['sensors'] ?? [])
+                ->firstWhere('type', 'odometer')['val'] ?? null;
+
+            $this->servicio->update(['status' => 'completed', 'fecha_realizacion' => now(), 'valor_kilometraje' => $odometerValue]);
+
+            VehicleServiceKilometer::updateOrCreate([
+                'vehicle_id' => $this->servicio->vehicle_id,
+                'service_id' => $this->servicio->service_id,
+                'last_km' => $this->servicio->valor_kilometraje,
+                'current_km' => $odometerValue,
+            ]);
         }
 
         $this->success('Servicio finalizado con éxito!');
@@ -89,7 +142,7 @@ class Service extends Component
     public function cambiarAInitiated()
     {
         if (Auth::user()->hasRole(['master', 'admin'])) {
-            $this->servicio->update(['status' => 'initiated', 'fecha_realizacion' => null]);
+            $this->servicio->update(['status' => 'initiated', 'fecha_realizacion' => null, 'valor_kilometraje' => null]);
             $this->success('Servicio reabierto correctamente.');
         }
     }
@@ -102,8 +155,7 @@ class Service extends Component
         if (Auth::user()->hasRole(['master', 'admin']) || $isOperador) {
 
             // Eliminar archivos relacionados
-            File::where('model_type', VehicleServiceRecordDetail::class)
-                ->where('model_id', $detalleId)
+            VehicleServiceRecordDetailArchivo::where('vehicle_service_record_detail_id', $detalleId)
                 ->delete();
 
             // Eliminar el detalle
@@ -119,16 +171,14 @@ class Service extends Component
         // Agregar imágenes y videos a cada detalle del servicio
         foreach ($this->servicio->detalles as $detalle) {
             // Obtener imágenes
-            $detalle->imagenes = File::where('model_type', VehicleServiceRecordDetail::class)
-                ->where('model_id', $detalle->id)
+            $detalle->imagenes = VehicleServiceRecordDetailArchivo::where('vehicle_service_record_detail_id', $detalle->id)
                 ->whereIn('type', ['jpg', 'jpeg', 'png']) // Solo imágenes
                 ->pluck('path')
                 ->map(fn($path) => asset('storage/' . $path))
                 ->toArray();
 
             // Obtener videos
-            $detalle->videos = File::where('model_type', VehicleServiceRecordDetail::class)
-                ->where('model_id', $detalle->id)
+            $detalle->videos = VehicleServiceRecordDetailArchivo::where('vehicle_service_record_detail_id', $detalle->id)
                 ->whereIn('type', ['mp4']) // Solo videos
                 ->pluck('path')
                 ->map(fn($path) => asset('storage/' . $path))

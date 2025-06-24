@@ -2,22 +2,26 @@
 
 namespace App\Livewire;
 
+use App\Models\ServiceRequest;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleRequest;
 use App\Models\VehicleServiceKilometer;
 use App\Models\VehicleServiceRecord;
+use App\Notifications\ServiceNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Mary\Traits\Toast;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
+
 class Dashboard extends Component
 {
-    use WithPagination;
+    use WithPagination, Toast;
     protected $paginationTheme = 'tailwind';
 
     public $pageField = 1;
@@ -159,6 +163,14 @@ class Dashboard extends Component
             ->paginate(10, ['*'], 'pagePart');
     }
 
+    protected function getServicesRequests()
+    {
+        return ServiceRequest::with(['vehicle', 'operador', 'service'])
+            ->whereIn('status', ['pending'])
+            ->orderByDesc('id')
+            ->paginate(10, ['*'], 'pageService');
+    }
+
     // public function getUpcomingServices()
     // {
     //     $records = VehicleServiceKilometer::with(['vehicle.operador', 'service'])->get();
@@ -212,76 +224,103 @@ class Dashboard extends Component
 
         foreach ($vehiculos as $vehiculo) {
             foreach ($servicios as $servicio) {
-                $kmData = VehicleServiceKilometer::where('vehicle_id', $vehiculo->id)
-                    ->where('service_id', $servicio->id)
-                    ->first();
 
-                $kmTranscurridos = $kmData ? $kmData->current_km - $kmData->last_km : null;
-                $faltanKm = ($kmTranscurridos !== null && $servicio->periodicidad_km)
-                    ? ($servicio->periodicidad_km - $kmTranscurridos)
-                    : null;
-
-                $porcentajeKm = ($kmTranscurridos !== null && $servicio->periodicidad_km && $servicio->periodicidad_km > 0)
-                    ? min(100, round(($kmTranscurridos / $servicio->periodicidad_km) * 100))
-                    : null;
-
+                // Buscamos el último servicio realizado
                 $ultimoServicio = VehicleServiceRecord::where('vehicle_id', $vehiculo->id)
                     ->where('service_id', $servicio->id)
                     ->whereNotNull('fecha_realizacion')
                     ->orderByDesc('fecha_realizacion')
                     ->first();
 
-                $diasTranscurridos = null;
-                $faltanDias = null;
-                $porcentajeDias = null;
-
-                if (
-                    intval($servicio->periodicidad_dias) > 0 &&
-                    $ultimoServicio &&
-                    $ultimoServicio->fecha_realizacion <= now()
-                ) {
-                    $diasTranscurridos = now()->diffInDays($ultimoServicio->fecha_realizacion);
-                    if ($diasTranscurridos < 0){
-                        $diasTranscurridos *= -1;
-                    }
-                    $faltanDias = $servicio->periodicidad_dias - $diasTranscurridos;
-                    $porcentajeDias = min(100, round(($diasTranscurridos / $servicio->periodicidad_dias) * 100));
+                if (!$ultimoServicio) {
+                    continue; // Si nunca se ha realizado, lo ignoramos (podríamos cambiar esta lógica si lo deseas)
                 }
 
-                $kmOk = $porcentajeKm !== null && $porcentajeKm >= 70;
-                $diasOk = $porcentajeDias !== null && $porcentajeDias >= 70;
+                // Obtenemos el current_km desde VehicleServiceKilometer
+                $kmData = VehicleServiceKilometer::where('vehicle_id', $vehiculo->id)
+                    ->where('service_id', $servicio->id)
+                    ->first();
 
-                if ($kmOk || $diasOk) {
-                    $estadoKm = $porcentajeKm >= 100 ? 'VENCIDO' : ($porcentajeKm >= 90 ? 'URGENTE' : 'PROXIMO');
-                    $estadoDias = $porcentajeDias !== null
-                        ? ($porcentajeDias >= 100 ? 'VENCIDO' : ($porcentajeDias >= 90 ? 'URGENTE' : 'PROXIMO'))
-                        : null;
+                $currentKm = $kmData ? $kmData->current_km : null;
 
-                    $estadoPrioridad = in_array('VENCIDO', [$estadoKm, $estadoDias]) ? 'VENCIDO'
-                        : (in_array('URGENTE', [$estadoKm, $estadoDias]) ? 'URGENTE' : 'PROXIMO');
+                $kmTranscurridos = $currentKm !== null ? $currentKm - $ultimoServicio->valor_kilometraje : null;
+                $faltanKm = ($servicio->periodicidad_km && $kmTranscurridos !== null)
+                    ? $servicio->periodicidad_km - $kmTranscurridos
+                    : null;
+                $porcentajeKm = ($servicio->periodicidad_km && $kmTranscurridos !== null && $servicio->periodicidad_km > 0)
+                    ? round(($kmTranscurridos / $servicio->periodicidad_km) * 100)
+                    : null;
 
-                    $result[] = [
-                        'vehiculo' => $vehiculo,
-                        'operador' => $vehiculo->operador,
-                        'servicio' => $servicio,
-                        'km_transcurridos' => max(0, $kmTranscurridos ?? 0),
-                        'faltan_km' => max(0, intval($faltanKm ?? 0)),
-                        'porcentaje_km' => $porcentajeKm,
-                        'estado_km' => $estadoKm,
-                        'dias_transcurridos' => max(0, $diasTranscurridos ?? 0),
-                        'faltan_dias' => round(max(0, $faltanDias ?? 0)),
-                        'porcentaje_dias' => $porcentajeDias,
-                        'estado_dias' => $estadoDias,
-                        'estado_prioridad' => $estadoPrioridad,
-                    ];
+                $diasTranscurridos = now()->diffInDays($ultimoServicio->fecha_realizacion);
+
+                if ($diasTranscurridos < 0) {
+                    $diasTranscurridos *= -1;
+                }
+
+                $faltanDias = $servicio->periodicidad_dias ? $servicio->periodicidad_dias - $diasTranscurridos : null;
+
+
+                $porcentajeDias = ($servicio->periodicidad_dias && $servicio->periodicidad_dias > 0)
+                    ? round(($diasTranscurridos / $servicio->periodicidad_dias) * 100)
+                    : null;
+
+                // dd($servicio->id, $diasTranscurridos, $faltanDias, $porcentajeDias);
+
+                // Ahora validamos cuándo mostrar
+                $mostrarPorKm = $kmTranscurridos !== null && $kmTranscurridos >= 1000;
+                $mostrarPorDias = $diasTranscurridos >= 5;
+
+                if ($mostrarPorKm || $mostrarPorDias) {
+
+                    // Estados por km
+                    $estadoKm = null;
+                    if ($porcentajeKm !== null) {
+                        $estadoKm = $porcentajeKm >= 100 ? 'VENCIDO' : ($porcentajeKm >= 95 ? 'URGENTE' : ($porcentajeKm >= 90 ? 'PROXIMO' : null));
+                    }
+
+                    // Estados por días
+                    $estadoDias = null;
+                    if ($porcentajeDias !== null) {
+                        $estadoDias = $porcentajeDias >= 100 ? 'VENCIDO' : ($porcentajeDias >= 95 ? 'URGENTE' : ($porcentajeDias >= 90 ? 'PROXIMO' : null));
+                    }
+
+                    // Prioridad combinada
+                    $prioridades = ['VENCIDO', 'URGENTE', 'PROXIMO'];
+                    $estadoPrioridad = null;
+
+                    foreach ($prioridades as $prioridad) {
+                        if ($estadoKm === $prioridad || $estadoDias === $prioridad) {
+                            $estadoPrioridad = $prioridad;
+                            break;
+                        }
+                    }
+
+                    if ($estadoPrioridad) {
+                        $result[] = [
+                            'vehiculo' => $vehiculo,
+                            'operador' => $vehiculo->operador,
+                            'servicio' => $servicio,
+                            'km_transcurridos' => max(0, intval($kmTranscurridos ?? 0)),
+                            'faltan_km' => intval($faltanKm ?? 0),
+                            'porcentaje_km' => $porcentajeKm,
+                            'estado_km' => $estadoKm,
+                            'dias_transcurridos' => intval($diasTranscurridos ?? 0),
+                            'faltan_dias' => intval($faltanDias ?? 0),
+                            'porcentaje_dias' => $porcentajeDias,
+                            'estado_dias' => $estadoDias,
+                            'estado_prioridad' => $estadoPrioridad,
+                            'ultimo_servicio' => $ultimoServicio,
+                        ];
+                    }
                 }
             }
         }
 
         return collect($result)
-            ->sortBy(['estado_prioridad', function ($item) {
-                return max($item['porcentaje_km'] ?? 0, $item['porcentaje_dias'] ?? 0);
-            }])->groupBy('estado_prioridad');
+            ->sortBy([
+                fn($item) => array_search($item['estado_prioridad'], ['VENCIDO', 'URGENTE', 'PROXIMO']),
+                fn($item) => min($item['faltan_km'] ?? PHP_INT_MAX, $item['faltan_dias'] ?? PHP_INT_MAX),
+            ])->groupBy('estado_prioridad');
     }
 
     public function render()
@@ -296,20 +335,24 @@ class Dashboard extends Component
         }
 
         if (auth()->user()->hasRole('operador') && auth()->user()->vehiculo) {
-            $servicesPending = VehicleServiceRecord::where('vehicle_id', auth()->user()->vehiculo->id)
+            $servicesPending = VehicleServiceRecord::with(['service', 'vehicle', 'detalles'])
+                ->where('vehicle_id', auth()->user()->vehiculo->id)
                 ->where('operador_id', auth()->user()->id)
-                ->where('status', 'pending')
-                ->orWhere('status', 'initiated')
+                ->where(function ($q) {
+                    $q->where('status', 'pending')->orWhere('status', 'initiated');
+                })
                 ->orderBy('id', 'desc')
                 ->paginate(10);
 
-            $servicesCompleted = VehicleServiceRecord::where('vehicle_id', auth()->user()->vehiculo->id)
+            $servicesCompleted = VehicleServiceRecord::with(['service', 'vehicle', 'detalles'])
+                ->where('vehicle_id', auth()->user()->vehiculo->id)
                 ->where('operador_id', auth()->user()->id)
                 ->where('status', 'completed')
                 ->orderBy('id', 'desc')
                 ->paginate(10);
 
-            $vehicleRequestsPending = VehicleRequest::where('vehicle_id', auth()->user()->vehiculo->id)
+            $vehicleRequestsPending = VehicleRequest::with(['vehicle', 'operador', 'parte'])
+                ->where('vehicle_id', auth()->user()->vehiculo->id)
                 ->whereIn('status', ['pending', 'initiated'])
                 ->orderBy('id', 'desc')
                 ->paginate(10);
@@ -322,6 +365,48 @@ class Dashboard extends Component
             'globalVehicleRequestsField' => $this->getGlobalVehicleRequestsFieldProperty(),
             'globalVehicleRequestsPart' => $this->getGlobalVehicleRequestsPartProperty(),
             'upcomingServices' => $this->getUpcomingServices(),
+            'servicesRequests' => $this->getServicesRequests(),
         ]);
+    }
+
+    public function approveRequest($requestId)
+    {
+        $request = ServiceRequest::findOrFail($requestId);
+        $request->update(['status' => 'accepted']);
+
+        // Crear un nuevo registro en `vehicle_service_records`
+        VehicleServiceRecord::create([
+            'vehicle_id' => $request->vehicle_id,
+            'service_id' => $request->service_id,
+            'operador_id' => $request->operador_id,
+            'status' => 'pending',
+            'solicitud_id' => $request->id,
+        ]);
+
+        $request->operador->notify(new ServiceNotification($request->vehicle, $request->service));
+
+        $this->toast(
+            type: 'success',
+            title: 'Aprobada',
+            description: 'Solicitud aprobada con éxito.',
+            icon: 'o-check',
+            css: 'alert-success text-white text-sm',
+            timeout: 3000,
+        );
+    }
+
+    public function rejectRequest($requestId)
+    {
+        $request = ServiceRequest::findOrFail($requestId);
+        $request->update(['status' => 'rejected']);
+
+        $this->toast(
+            type: 'error',
+            title: 'Rechazada',
+            description: 'Solicitud rechazada correctamente.',
+            icon: 'o-x-circle',
+            css: 'alert-error text-white text-sm',
+            timeout: 3000,
+        );
     }
 }

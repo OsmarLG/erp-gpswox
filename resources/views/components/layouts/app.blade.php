@@ -100,7 +100,7 @@
             <hr>
             @if ($user = auth()->user())
                 <x-menu activate-by-route title="">
-                    <x-menu-item title="Dashboard" icon="o-home" link="{{ route('dashboard') }}" />
+                    <x-menu-item title="Inicio" icon="o-home" link="{{ route('dashboard') }}" />
                     {{-- @if ($user->hasPermissionTo('view_menu_settings'))
                         <x-menu-sub title="Settings" icon="o-cog-6-tooth">
                             <x-menu-item title="Archives" icon="o-archive-box" link="####" />

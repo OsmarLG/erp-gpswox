@@ -25,7 +25,7 @@
     <x-table :headers="$headers" :rows="$vehicles" :sort-by="$sortBy" striped with-pagination>
 
         @scope('cell_KilometrajeGpswox', $vehiculo)
-            {{ $vehiculo->kilometraje_gpswox . ' Km' ?? 'N/A' }}
+        {{ $vehiculo->kilometraje_gpswox ? number_format($vehiculo->kilometraje_gpswox, 0, '.', ',') . ' Km' : 'N/A' }}
         @endscope   
 
         {{-- Sobrescribe las acciones --}}

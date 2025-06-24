@@ -14,6 +14,8 @@ class VehicleRequest extends Model
         'operador_id',
         'status',
         'type',
+        'notas_admin',
+        'notas_operador',
         'parte_id',
     ];
 
@@ -30,5 +32,15 @@ class VehicleRequest extends Model
     public function parte()
     {
         return $this->belongsTo(Parte::class, 'parte_id');
+    }
+
+    public function archivos()
+    {
+        return $this->hasMany(VehicleRequestArchivo::class);
+    }
+
+    public function getHasArchivosAttribute()
+    {
+        return $this->archivos()->exists();
     }
 }

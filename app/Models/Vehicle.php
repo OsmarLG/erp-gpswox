@@ -59,6 +59,11 @@ class Vehicle extends Model
         return $this->belongsTo(User::class, 'operador_id');
     }
 
+    public function requests()
+    {
+        return $this->hasMany(VehicleRequest::class);
+    }
+
     /**
      * Relación polimórfica con la tabla files (morphMany).
      */

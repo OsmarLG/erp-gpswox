@@ -20,6 +20,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
+use App\Models\VehicleRequestArchivo;
 
 class Show extends Component
 {
@@ -104,6 +105,9 @@ class Show extends Component
         'saldo_gps2'
     ];
 
+    public $notas_operador;
+    public $notas_admin;
+
     public function openViewImageModal($imageUrl)
     {
         $this->viewImageModalUrl = $imageUrl;
@@ -165,6 +169,29 @@ class Show extends Component
         $this->odometerValue = collect($response[0]['items'][0]['sensors'] ?? [])
             ->firstWhere('type', 'odometer')['val'] ?? null;
 
+        // Buscar si ya existe el registro
+        $todosLosServicios = Servicio::all();
+        foreach ($todosLosServicios as $servicio) {
+            $vehicleServiceKilometer = VehicleServiceKilometer::where('vehicle_id', $vehiculo->id)
+                ->where('service_id', $servicio->id)
+                ->first();
+
+            if ($vehicleServiceKilometer) {
+                // Solo actualizar current_km
+                $vehicleServiceKilometer->update([
+                    'current_km' => $this->odometerValue,
+                ]);
+            } else {
+                // Crear registro nuevo
+                VehicleServiceKilometer::create([
+                    'vehicle_id' => $vehiculo->id,
+                    'service_id' => $servicio->id,
+                    'last_km' => $this->odometerValue ?? 0,
+                    'current_km' => $this->odometerValue,
+                ]);
+            }
+        }
+
         $this->availableServices = Servicio::all();
     }
 
@@ -203,7 +230,7 @@ class Show extends Component
             return;
         }
 
-        $filePath = $this->files->store('vehicle_request_files', 'public');
+        $filePath = $this->files->store('vehicle_request_archivos', 'public');
 
         $request = VehicleRequest::create([
             'vehicle_id' => $this->vehiculo->id,
@@ -213,13 +240,14 @@ class Show extends Component
             'status' => 'finished',
         ]);
 
-        File::create([
+        VehicleRequestArchivo::create([
             'path' => $filePath,
-            'model_type' => VehicleRequest::class,
-            'model_id' => $request->id,
             'description' => 'Evidencia subida por ' . auth()->user()->name,
+            'vehicle_request_id' => $request->id,
             'operador_id' => $this->vehiculo->operador_id ?? auth()->user()->id,
-            'type'        => $this->files->getClientOriginalExtension(),
+            'vehicle_id' => $this->vehiculo->id,
+            'parte_id' => $partId,
+            'type' => $this->files->getClientOriginalExtension(),
         ]);
 
         $this->reset('files');
@@ -308,7 +336,7 @@ class Show extends Component
     public function approveRequest($requestId)
     {
         $request = ServiceRequest::findOrFail($requestId);
-        $request->update(['status' => 'accepted']);
+        $request->update(['status' => 'accepted', 'notas_admin' => $this->notas_admin]);
 
         // Crear un nuevo registro en `vehicle_service_records`
         VehicleServiceRecord::create([
@@ -316,6 +344,7 @@ class Show extends Component
             'service_id' => $request->service_id,
             'operador_id' => $request->operador_id,
             'status' => 'pending',
+            'solicitud_id' => $request->id,
         ]);
 
         $request->operador->notify(new ServiceNotification($request->vehicle, $request->service));
@@ -333,7 +362,7 @@ class Show extends Component
     public function rejectRequest($requestId)
     {
         $request = ServiceRequest::findOrFail($requestId);
-        $request->update(['status' => 'rejected']);
+        $request->update(['status' => 'rejected', 'notas_admin' => $this->notas_admin]);
 
         $this->toast(
             type: 'error',
@@ -364,6 +393,7 @@ class Show extends Component
                 'operador_id' => $this->vehiculo->operador_id,
                 'status' => 'pending',
                 'type' => 'field',
+                'notas_admin' => $this->notas_admin,
             ]);
         } elseif ($type === 'part') {
             if (VehicleRequest::where('vehicle_id', $this->vehiculo->id)
@@ -382,9 +412,11 @@ class Show extends Component
                 'operador_id' => $this->vehiculo->operador_id,
                 'status' => 'pending',
                 'type' => 'part',
+                'notas_admin' => $this->notas_admin,
             ]);
         }
 
+        $this->reset('notas_admin');
         $this->toast('success', 'Solicitud Enviada', 'Se ha solicitado la modificación.');
     }
 
@@ -437,7 +469,7 @@ class Show extends Component
     {
         $operators = User::whereHas('roles', fn($q) => $q->whereIn('name', ['operador']))->get();
         $serviceRecords = VehicleServiceRecord::where('vehicle_id', $this->vehiculo->id)->orderBy('id', 'desc')->paginate(10);
-        $parts = Parte::with(['categoria', 'files', 'vehicleRequests'])
+        $parts = Parte::with(['categoria', 'files', 'vehicleRequests', 'archivos'])
             ->orderBy('categoria_id') // Ordena por categoría
             ->get();
 
@@ -445,7 +477,6 @@ class Show extends Component
 
         return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators', 'parts', 'requests'));
     }
-
 
     public function storeServiceRecord()
     {
@@ -455,12 +486,23 @@ class Show extends Component
             'fecha_realizacion_servicio' => 'required|date',
         ]);
 
+        // Obtener datos del GPSWOX
+        $response = HttpRequestService::makeRequest('post', HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
+            'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
+            'id' => $this->vehiculo->gpswox_id,
+        ]);
+
+        // Filtrar el sensor de odómetro
+        $current_odometerValue = collect($response[0]['items'][0]['sensors'] ?? [])
+            ->firstWhere('type', 'odometer')['val'] ?? null;
+
         $record = VehicleServiceRecord::create([
             'vehicle_id' => $this->vehiculo->id,
             'service_id' => $this->service_id,
             'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
             'status' => 'completed',
             'fecha_realizacion' => $this->fecha_realizacion_servicio,
+            'valor_kilometraje' => $this->last_km,
         ]);
 
         VehicleServiceKilometer::updateOrCreate([
@@ -468,6 +510,7 @@ class Show extends Component
             'service_id' => $this->service_id,
         ], [
             'last_km' => $this->last_km,
+            'current_km' => $current_odometerValue,
         ]);
 
         VehicleServiceRecordDetail::create([
@@ -479,5 +522,46 @@ class Show extends Component
         $this->reset(['service_id', 'last_km', 'fecha_realizacion_servicio']);
 
         $this->toast('success', 'Servicio registrado', 'El servicio fue guardado correctamente.');
+    }
+
+    public function storeSolicitudServiceRecord()
+    {
+
+        if (!$this->vehiculo->operador_id) {
+            $this->toast('error', 'Error', 'El vehículo no tiene operador asignado.');
+            return;
+        }
+
+        if (VehicleServiceRecord::where('vehicle_id', $this->vehiculo->id)->where('service_id', $this->service_id)->where('status', ['pending', 'initiated'])->exists()) {
+            $this->toast('error', 'Error', 'Ya existe una solicitud para este servicio.');
+            return;
+        }
+
+        $this->validate([
+            'service_id' => 'required|exists:servicios,id',
+            'notas_admin' => 'nullable|string',
+        ]);
+
+        $record = VehicleServiceRecord::create([
+            'vehicle_id' => $this->vehiculo->id,
+            'service_id' => $this->service_id,
+            'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
+            'status' => 'pending',
+        ]);
+
+        if ($this->notas_admin) {
+            VehicleServiceRecordDetail::create([
+                'vehicle_service_record_id' => $record->id,
+                'operador_id' => $this->vehiculo->operador_id ?? auth()->id(),
+                'detalle' => 'Solicitud de servicio, notas: ' . $this->notas_admin,
+            ]);
+        }
+
+        $service = Servicio::find($this->service_id);
+
+        $this->vehiculo->operador->notify(new ServiceNotification($this->vehiculo, $service));
+        $this->reset(['service_id', 'notas_admin']);
+
+        $this->toast('success', 'Solicitud enviada', 'La solicitud fue enviada correctamente.');
     }
 }

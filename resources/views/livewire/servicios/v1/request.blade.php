@@ -23,7 +23,7 @@
     </x-header>
 
     <div class="mt-6">
-
+        <p><span class="font-bold">Notas:</span> {{ $request->notas_admin ?? 'No hay notas' }}</p>
         {{-- Si es 'field', operador edita valor, admin/master solo ve --}}
         @if ($request->type === 'field')
             @if (auth()->user()->hasRole('operador'))

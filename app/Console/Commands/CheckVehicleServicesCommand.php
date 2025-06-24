@@ -26,6 +26,7 @@ class CheckVehicleServicesCommand extends Command
             ->get();
 
         foreach ($vehicles as $vehicle) {
+            $this->info("Verificando servicios para el vehículo {$vehicle->placa}");
             // Obtener datos del GPSWOX
             $response = Http::post(HttpRequestService::BASE_GPSWOX_URL . 'get_devices', [
                 'user_api_hash' => HttpRequestService::API_GPSWOX_TOKEN,
@@ -52,6 +53,7 @@ class CheckVehicleServicesCommand extends Command
             $services = Servicio::all();
 
             foreach ($services as $service) {
+                $this->info("Verificando servicios para el vehículo {$vehicle->placa} y el servicio {$service->nombre}");
                 // Crear o actualizar el registro de kilometraje del servicio
                 $record = VehicleServiceKilometer::firstOrCreate(
                     ['vehicle_id' => $vehicle->id, 'service_id' => $service->id],
@@ -99,6 +101,9 @@ class CheckVehicleServicesCommand extends Command
                     $this->info("Creando primer registro por KM (sin días): {$service->nombre} en {$vehicle->placa}");
                     $this->createServiceRecord($vehicle, $service);
                 }
+                else {
+                    $this->info("No se creó ningún registro para el servicio {$service->nombre} del vehículo {$vehicle->placa}.");
+                }
             }
         }
 
@@ -110,17 +115,22 @@ class CheckVehicleServicesCommand extends Command
      */
     private function createServiceRecord(Vehicle $vehicle, Servicio $service)
     {
-        VehicleServiceRecord::firstOrCreate(
-            ['vehicle_id' => $vehicle->id, 'service_id' => $service->id, 'status' => 'pending'],
-            ['operador_id' => $vehicle->operador_id]
-        );
-
         // Verificar si el servicio tiene `notificar` en true antes de enviar la notificación
         if ($service->notificar == true && $vehicle->operador_id) {
+            if (VehicleServiceRecord::where('vehicle_id', $vehicle->id)->where('service_id', $service->id)->where('status', ['pending', 'initiated'])->exists()) {
+                $this->info("Ya existe un registro pendiente para el servicio {$service->nombre} del vehículo {$vehicle->placa}.");
+                return;
+            }
+
+            VehicleServiceRecord::firstOrCreate(
+                ['vehicle_id' => $vehicle->id, 'service_id' => $service->id, 'status' => 'pending'],
+                ['operador_id' => $vehicle->operador_id]
+            );
+
             $vehicle->operador->notify(new ServiceNotification($vehicle, $service));
             $this->info("Notificación enviada al operador del vehículo {$vehicle->placa} para el servicio {$service->nombre}.");
         } else {
-            $this->info("Notificación omitida para el servicio {$service->nombre} del vehículo {$vehicle->placa}.");
+            $this->info("Notificación y creación omitida para el servicio {$service->nombre} del vehículo {$vehicle->placa}.");
         }
     }
 }

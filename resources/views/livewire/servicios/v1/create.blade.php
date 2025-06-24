@@ -12,6 +12,12 @@
                 wire:model="selectedService" 
                 single 
             />
+
+            <x-input 
+                label="Notas" 
+                icon="o-pencil" 
+                wire:model="notas_operador" 
+            />
             
             <x-slot:actions>
                 <x-button label="Solicitar Servicio" class="btn-primary" type="submit" />

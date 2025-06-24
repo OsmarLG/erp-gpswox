@@ -17,7 +17,9 @@ class VehicleServiceRecord extends Model
         'operador_id',
         'completed',
         'fecha_realizacion',
+        'valor_kilometraje',
         'status',
+        'solicitud_id',
     ];
 
     protected $casts = [
@@ -62,5 +64,32 @@ class VehicleServiceRecord extends Model
     public function detalles()
     {
         return $this->hasMany(VehicleServiceRecordDetail::class, 'vehicle_service_record_id')->orderBy('created_at', 'desc');
+    }
+
+    public function solicitud()
+    {
+        return $this->belongsTo(ServiceRequest::class, 'solicitud_id');
+    }
+
+    public function getHasDetallesAttribute()
+    {
+        $lastDetalle = $this->detalles()->orderBy('created_at', 'desc')->first();
+
+        if (!$lastDetalle) {
+            return false;
+        }
+
+        return $lastDetalle->operador_id === $this->operador_id;
+    }
+
+    public function getHasDetallesOperadorAttribute()
+    {
+        $lastDetalle = $this->detalles()->orderBy('created_at', 'desc')->first();
+
+        if (!$lastDetalle) {
+            return false;
+        }
+
+        return $lastDetalle->operador_id === auth()->user()->id;
     }
 }

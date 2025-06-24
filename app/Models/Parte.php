@@ -28,4 +28,10 @@ class Parte extends Model
         return $this->hasManyThrough(File::class, VehicleRequest::class, 'parte_id', 'model_id')
             ->where('files.model_type', VehicleRequest::class)->orderBy('files.created_at', 'desc')->take(5);
     }
+
+    public function archivos()
+    {
+        return $this->hasManyThrough(VehicleRequestArchivo::class, VehicleRequest::class, 'parte_id', 'vehicle_request_id')
+            ->orderBy('vehicle_request_archivos.created_at', 'desc')->take(5);
+    }
 }

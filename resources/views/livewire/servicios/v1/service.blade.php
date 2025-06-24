@@ -18,6 +18,32 @@
     <div class="mt-6">
         <h2 class="text-xl font-semibold mb-4">Detalles del Servicio</h2>
 
+        @if ($servicio->solicitud)
+            <p class="text-sm text-gray-700"><span class="font-bold">Notas:</span> {{ $servicio->solicitud->notas_operador ?? 'N/A' }}</p>
+        @endif
+
+        @if (auth()->user()->hasRole(['master', 'admin']))
+            @if ($servicioAnterior)
+                <h3 class="text-xl font-semibold mb-4">Servicio Anterior</h3>
+                <p class="text-sm text-gray-700"><span class="font-bold">Notas:</span> {{ $servicioAnterior->solicitud->notas_operador ?? 'N/A' }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{ $servicioAnterior->fecha_realizacion->format('d/m/Y H:i:s') }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioAnterior->valor_kilometraje }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Operador:</span> {{ $servicioAnterior->operador->name }}</p>
+                <br>
+                <a href="{{ route('servicios.service', $servicioAnterior->id) }}" class="btn btn-primary">Ver Servicio Anterior</a>
+            @endif
+
+            @if ($servicioSiguiente)
+                <h3 class="text-xl font-semibold mb-4">Servicio Siguiente</h3>
+                <p class="text-sm text-gray-700"><span class="font-bold">Notas:</span> {{ $servicioSiguiente->solicitud->notas_operador ?? 'N/A' }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{ $servicioSiguiente->fecha_realizacion->format('d/m/Y H:i:s') }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioSiguiente->valor_kilometraje }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Operador:</span> {{ $servicioSiguiente->operador->name }}</p>
+                <br>
+                <a href="{{ route('servicios.service', $servicioSiguiente->id) }}" class="btn btn-primary">Ver Servicio Siguiente</a>
+            @endif
+        @endif
+
         <div class="space-y-4">
             @foreach ($detalles as $detalle)
                 <div class="border p-4 rounded-lg">
@@ -62,7 +88,7 @@
         {{-- Formulario para agregar detalles (solo si el servicio no está completado) --}}
         @if (auth()->user()->hasRole(['master', 'admin', 'operador']) && in_array($servicio->status, ['initiated', 'pending']))
             <div class="mt-6">
-                <h2 class="text-lg font-semibold mb-3">Agregar Detalle</h2>
+                <h2 class="text-xl font-semibold mb-3">Agregar Detalle</h2>
                 <textarea wire:model="detalle" class="w-full border rounded-lg p-2" placeholder="Escribe un detalle..."></textarea>
 
                 <div class="mt-3" x-data="{

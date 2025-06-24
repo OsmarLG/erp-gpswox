@@ -1,4 +1,4 @@
-<x-layouts.app title="Dashboard">
+<x-layouts.app title="Inicio">
     <livewire:dashboard />
     {{-- @livewire('dashboard') --}}
 </x-layouts.app>

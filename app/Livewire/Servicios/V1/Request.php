@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Servicios\V1;
 
-use App\Models\VehicleRequest;
 use App\Models\File;
+use App\Models\VehicleRequest;
+use App\Models\VehicleRequestArchivo;
+use App\Models\VehicleServiceRecordDetailArchivo;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\Auth;
 use Mary\Traits\Toast;
 
 class Request extends Component
@@ -85,36 +87,36 @@ class Request extends Component
         }
 
         $this->validate([
-            'files' => 'required|file|mimes:jpg,jpeg,png|max:20480',
-            'videos' => 'required|file|mimes:mp4|max:20480',
-        ]);
+            'files' => 'nullable|file|mimes:jpg,jpeg,png|max:20480|required_without:videos',
+            'videos' => 'nullable|file|mimes:mp4|max:20480|required_without:files',
+        ]);           
 
         if ($this->request->type === 'part') {
             if ($this->files) {
-                $path = $this->files->store('vehicle_request_files', 'public');
-                File::create([
-                    'model_type'  => VehicleRequest::class,
-                    'model_id'    => $this->request->id,
-                    'path'        => $path,
-                    'type'        => $this->files->getClientOriginalExtension(),
+                $path = $this->files->store('vehicle_request_archivos', 'public');
+                VehicleRequestArchivo::create([
+                    'path' => $path,
+                    'description' => $this->fileDescriptions ?? 'N/A',
+                    'vehicle_request_id' => $this->request->id,
                     'operador_id' => Auth::id(),
-                    'description' => $this->fileDescriptions ?? null,
+                    'vehicle_id' => $this->request->vehicle_id,
+                    'parte_id' => $this->request->parte_id,
+                    'type' => $this->files ? $this->files->getClientOriginalExtension() : 'image',
                 ]);
             }
 
             if ($this->videos) {
-                $path = $this->videos->store('vehicle_request_files', 'public');
-                File::create([
-                    'model_type'  => VehicleRequest::class,
-                    'model_id'    => $this->request->id,
-                    'path'        => $path,
-                    'type'        => $this->videos->getClientOriginalExtension(),
+                $path = $this->videos->store('vehicle_request_archivos', 'public');
+                VehicleRequestArchivo::create([
+                    'path' => $path,
+                    'description' => $this->fileDescriptions ?? 'N/A',
+                    'vehicle_request_id' => $this->request->id,
                     'operador_id' => Auth::id(),
-                    'description' => $this->fileDescriptions ?? null,
+                    'vehicle_id' => $this->request->vehicle_id,
+                    'parte_id' => $this->request->parte_id,
+                    'type' => $this->files ? $this->files->getClientOriginalExtension() : 'video',
                 ]);
             }
-
-            $this->request->update(['status' => 'finished']);
 
             $this->reset('files', 'videos', 'fileDescriptions');
             $this->success('Archivos subidos correctamente.');
@@ -160,7 +162,7 @@ class Request extends Component
      */
     public function eliminarArchivo($fileId)
     {
-        $file = File::findOrFail($fileId);
+        $file = VehicleRequestArchivo::findOrFail($fileId);
 
         // Permitir si es admin/master o si el file->operador_id == current user
         if (
@@ -175,8 +177,7 @@ class Request extends Component
     public function render()
     {
         // Archivos ya guardados en la BD
-        $persistedFiles = File::where('model_type', VehicleRequest::class)
-            ->where('model_id', $this->request->id)
+        $persistedFiles = VehicleRequestArchivo::where('vehicle_request_id', $this->request->id)
             ->get();
 
         return view('livewire.servicios.v1.request', [

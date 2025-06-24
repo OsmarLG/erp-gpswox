@@ -31,4 +31,9 @@ class VehicleServiceRecordDetail extends Model
     {
         return $this->morphMany(File::class, 'model');
     }
+
+    public function archivos()
+    {
+        return $this->hasMany(VehicleServiceRecordDetailArchivo::class);
+    }
 }

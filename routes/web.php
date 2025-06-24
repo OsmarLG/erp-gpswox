@@ -34,7 +34,7 @@ Route::get('/', function () {
 // Rutas de dashboard (autenticadas)
 Route::middleware('auth')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/inicio', [DashboardController::class, 'index'])->name('dashboard');
 
     //Profile Routes
     Route::prefix('profile')->group(function () {

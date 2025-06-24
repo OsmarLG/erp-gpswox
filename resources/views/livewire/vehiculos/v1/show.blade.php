@@ -3,7 +3,8 @@
     {{ $path = implode(' / ', array_map('ucfirst', explode('/', request()->path()))) }}
 
     <h2 class="text-2xl font-bold text-center mb-6">Detalles de {{ $vehiculo->nombre_unidad }}</h2>
-    <h4 class="text-2xl font-bold text-center mb-6">Odometro: {{ $odometerValue }}</h4>
+    <h4 class="text-2xl font-bold text-center mb-6">Odometro:
+        {{ $odometerValue ? number_format($odometerValue, 0, '.', ',') . ' Km' : 'N/A' }}</h4>
 
     {{-- Mostrar info de operador si existe --}}
     @if ($vehiculo->operador)
@@ -178,6 +179,7 @@
                                 <tr>
                                     <th>Parte</th>
                                     <th>Operador</th>
+                                    <th>Notas</th>
                                     <th>Estatus</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -187,6 +189,7 @@
                                     <tr>
                                         <td>{{ $request->parte->nombre ?? 'N/A' }}</td>
                                         <td>{{ $request->operador->name }}</td>
+                                        <td>{{ $request->notas_admin ?? 'N/A' }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
                                             @if ($request->status === 'initiated' || $request->status === 'pending')
@@ -216,9 +219,9 @@
                                         {{ $part->nombre }}
                                     </x-slot:heading>
                                     <x-slot:content>
-                                        @if ($part->files->isNotEmpty())
+                                        @if ($part->archivos->isNotEmpty())
                                             <ul>
-                                                @foreach ($part->files as $file)
+                                                @foreach ($part->archivos as $file)
                                                     @php
                                                         $extension = pathinfo($file->path, PATHINFO_EXTENSION);
                                                     @endphp
@@ -236,30 +239,20 @@
                                                         @endif
 
                                                         <p class="text-sm text-gray-700 mt-2">
-                                                        <p class="text-sm text-gray-700 mt-2">
                                                             <strong>
-                                                                @if ($file->user)
-                                                                    ({{ $file->user->id }})
-                                                                    - {{ $file->user->name }}
+                                                                @if ($file->operador)
+                                                                    ({{ $file->operador->id }})
+                                                                    - {{ $file->operador->name }}
                                                                 @else
-                                                                    N/A
+                                                                    Subido por el administrador del sistema
                                                                 @endif
                                                             </strong>
                                                         </p>
-                                                        <p class="text-sm text-gray-700 mt-2">
-                                                            {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
-                                                        </p>
-                                                        </p>
-                                                        <p class="text-sm text-gray-700 mt-2">
-                                                            <strong>
-                                                                @if ($file->user)
-                                                                    ({{ $file->user->id }}) - {{ $file->user->name }}
-                                                                @else
-                                                                    N/A
-                                                                @endif
-                                                            </strong>
-                                                        </p>
-
+                                                        @if ($file->description)
+                                                            <p class="text-sm text-gray-700 mt-2">
+                                                                {{ 'Descripción: ' . $file->description . '- Fecha: ' . $file->created_at }}
+                                                            </p>
+                                                        @endif
                                                     </div>
                                                 @endforeach
                                             </ul>
@@ -289,6 +282,9 @@
                                                     ->where('type', 'part')
                                                     ->where('parte_id', $part->id)
                                                     ->isNotEmpty()" />
+
+                                            <x-input wire:model="notas_admin" wire:ignore label="Notas"
+                                                placeholder="Notas" />
                                         @else
                                             <p class="text-sm text-gray-500">Seleccionar operador para solicitar
                                                 evidencia</p>
@@ -316,6 +312,7 @@
                                 <tr>
                                     <th>Servicio</th>
                                     <th>Fecha de Realización</th>
+                                    <th>Kilometraje</th>
                                     <th>Estatus</th>
                                     <th>Operador</th>
                                     <th>Acciones</th>
@@ -326,6 +323,9 @@
                                     <tr>
                                         <td>{{ $record->service->nombre }}</td>
                                         <td>{{ $record->fecha_realizacion ? $record->fecha_realizacion->format('d-m-Y') : 'Sin Realizar' }}
+                                        </td>
+                                        <td>
+                                            {{ $record->valor_kilometraje !== null ? number_format($record->valor_kilometraje, 0, '.', ',') . ' Km' : 'N/A' }}
                                         </td>
                                         <td>{{ ucfirst($record->status) }}</td>
                                         <td>{{ $record->operador->name ?? 'N/A' }}</td>
@@ -342,6 +342,32 @@
                         <p class="text-sm text-gray-500">No hay servicios registrados.</p>
                     @endif
                 </x-card>
+                @if ($vehiculo->operador_id != null)
+                    <x-card title="Registrar Solicitud De Servicio" class="mb-6">
+                        <form wire:submit.prevent="storeSolicitudServiceRecord"
+                            class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {{-- Seleccionar servicio --}}
+                            <div>
+                                <label for="service_id"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
+                                <select id="service_id" wire:model.defer="service_id"
+                                    class="form-select rounded-lg border-gray-300 shadow-sm w-full">
+                                    <option value="">Selecciona un servicio</option>
+                                    @foreach ($availableServices as $service)
+                                        <option value="{{ $service->id }}">{{ $service->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <x-input wire:model="notas_admin" wire:ignore label="Notas" placeholder="Notas" />
+                            <br>
+                            {{-- Botón de guardar --}}
+                            <div class="flex items-end">
+                                <x-button type="submit" label="Guardar Solicitud" class="btn-success w-full"
+                                    icon="o-check-circle" />
+                            </div>
+                        </form>
+                    </x-card>
+                @endif
                 <x-card title="Registrar Servicio Realizado" class="mb-6">
                     <form wire:submit.prevent="storeServiceRecord" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {{-- Seleccionar servicio --}}
@@ -420,6 +446,7 @@
                                 <tr>
                                     <th>Servicio</th>
                                     <th>Operador</th>
+                                    <th>Notas</th>
                                     <th>Estatus</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -429,6 +456,7 @@
                                     <tr>
                                         <td>{{ optional($request->service)->nombre ?? 'N/A' }}</td>
                                         <td>{{ optional($request->operador)->name ?? 'N/A' }}</td>
+                                        <td>{{ $request->notas_operador ?? 'N/A' }}</td>
                                         <td>{{ ucfirst($request->status) }}</td>
                                         <td>
                                             @if ($request->status === 'pending')
