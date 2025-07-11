@@ -25,10 +25,18 @@
     <x-table :headers="$headers" :rows="$partes" :sort-by="$sortBy" striped with-pagination>
         {{-- Sobrescribe las acciones --}}
         @scope('actions', $parte)
-            <div class="flex gap-2">
-                <x-button icon="o-pencil" wire:click="editParte({{ $parte->id }})" spinner class="btn-sm" />
-                <x-button icon="o-trash" wire:click="deleteParte({{ $parte->id }})" spinner class="btn-sm" />
-            </div>
+        <div class="flex gap-2">
+            <x-button icon="o-pencil" wire:click="editParte({{ $parte->id }})" spinner class="btn-sm" />
+            
+            <x-button
+                icon="o-trash"
+                class="btn-sm"
+                spinner
+                x-data
+                x-on:click.prevent="if (confirm('¿Estás seguro de eliminar esta parte?')) { $wire.deleteParte({{ $parte->id }}) }"
+            />
+        </div>
+        
         @endscope
 
         <x-slot:empty>

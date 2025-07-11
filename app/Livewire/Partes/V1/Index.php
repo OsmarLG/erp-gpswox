@@ -102,6 +102,14 @@ class Index extends Component
         $this->edit_parte_modal = true;
     }
 
+    public function deleteParte(int $parteId)
+    {
+        $parte = Parte::findOrFail($parteId);
+        $parte->delete();
+
+        $this->success('Parte eliminada con éxito!');
+    }
+
     public function updateParte()
     {
         $this->validate([

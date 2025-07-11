@@ -112,21 +112,24 @@
                     <x-input label="Placa" wire:model.defer="placa" />
                     <x-input label="Tipo Marca" wire:model.defer="tipo_marca" />
                     <x-input label="VIN" wire:model.defer="vin" />
-                    <x-input label="Teléfono Seguro" wire:model.defer="telefono_seguro" />
                     <br>
+                    <x-input label="ID GPSWOX" wire:model.defer="gpswox_id" />
                     <x-checkbox label="Recibir Datos de GPSWOX" wire:model.defer="get_datos_gpswox" />
                 </x-card>
 
                 <x-card title="Información Tarjeta y TAG">
                     <x-input label="No. Tarjeta de Circulación" wire:model.defer="no_tarjeta_circulacion" />
                     <x-datetime label="Vigencia Tarjeta" wire:model.defer="vigencia_tarjeta" />
-                    <x-input label="Tag Número" wire:model.defer="tag_numero" />
+                    <x-input label="Tag Casetas" wire:model.defer="tag_numero" />
                     <x-input label="TAG Gasolina ID" wire:model.defer="tag_gasolina_id" />
+                    <x-input label="Tarjeta Estado" wire:model.defer="tarjeta_estado" />
+                    <x-input label="Nombre Tarjeta" wire:model.defer="nombre_tarjeta" />
                 </x-card>
 
                 <x-card title="Información Verificación y Batería">
                     <x-datetime label="Verificación Vencimiento" wire:model.defer="verificacion_vencimiento" />
                     <x-datetime label="Fecha Batería" wire:model.defer="fecha_bateria" />
+                    <x-input label="Marca Bateria" wire:model.defer="marca_bateria" />
                 </x-card>
 
                 <x-card title="Información Llantas y Rines">
@@ -136,25 +139,29 @@
 
                 <x-card title="Información Póliza">
                     <x-input label="Póliza No." wire:model.defer="poliza_no" />
+                    <x-input label="Teléfono Seguro" wire:model.defer="telefono_seguro" />
                     <x-input label="Compañía Seguros" wire:model.defer="compania_seguros" />
                     <x-datetime label="Vigencia Póliza" wire:model.defer="poliza_vigencia" />
                     <x-input label="Costo Póliza" wire:model.defer="costo_poliza" prefix="MXN" money />
+                    <x-input label="Asegurado" wire:model.defer="asegurado" />
+                    <x-input label="Comentarios Seguro" wire:model.defer="comentarios_seguro" />
                 </x-card>
 
-                <x-card title="Información GPSWOX">
+                {{-- <x-card title="Información GPSWOX">
                     <x-input label="ID GPSWOX" wire:model.defer="gpswox_id" />
-                </x-card>
+                </x-card> --}}
 
                 <x-card title="GPS 1">
-                    <x-input label="ID GPS 1" wire:model.defer="id_gps1" />
+                    {{-- <x-input label="ID GPS 1" wire:model.defer="id_gps1" /> --}}
                     <x-input label="Teléfono GPS 1" wire:model.defer="tel_gps1" />
                     <x-input label="IMEI GPS 1" wire:model.defer="imei_gps1" />
                     <x-datetime label="Vigencia GPS 1" wire:model.defer="vigencia_gps1" />
                     <x-input label="Saldo GPS 1" wire:model.defer="saldo_gps1" />
+                    <x-input label="Comentarios GPS" wire:model.defer="comentarios_gps" />
                 </x-card>
 
                 <x-card title="GPS 2">
-                    <x-input label="ID GPS 2" wire:model.defer="id_gps2" />
+                    {{-- <x-input label="ID GPS 2" wire:model.defer="id_gps2" /> --}}
                     <x-input label="Teléfono GPS 2" wire:model.defer="tel_gps2" />
                     <x-input label="IMEI GPS 2" wire:model.defer="imei_gps2" />
                     <x-datetime label="Vigencia GPS 2" wire:model.defer="vigencia_gps2" />
@@ -221,7 +228,7 @@
                                     <x-slot:content>
                                         @if ($part->archivos->isNotEmpty())
                                             <ul>
-                                                @foreach ($part->archivos as $file)
+                                                @foreach ($part->archivos_filtrados as $file)
                                                     @php
                                                         $extension = pathinfo($file->path, PATHINFO_EXTENSION);
                                                     @endphp

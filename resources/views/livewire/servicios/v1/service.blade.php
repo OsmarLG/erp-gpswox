@@ -25,9 +25,10 @@
         @if (auth()->user()->hasRole(['master', 'admin']))
             @if ($servicioAnterior)
                 <h3 class="text-xl font-semibold mb-4">Servicio Anterior</h3>
+                <p class="text-sm text-gray-700"><span class="font-bold">ID:</span> {{ $servicioAnterior->id }}</p>
                 <p class="text-sm text-gray-700"><span class="font-bold">Notas:</span> {{ $servicioAnterior->solicitud->notas_operador ?? 'N/A' }}</p>
-                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{ $servicioAnterior->fecha_realizacion->format('d/m/Y H:i:s') }}</p>
-                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioAnterior->valor_kilometraje }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{ optional($servicioAnterior->fecha_realizacion)->format('d/m/Y H:i:s') }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioAnterior->valor_kilometraje ?? 'N/A' }}</p>
                 <p class="text-sm text-gray-700"><span class="font-bold">Operador:</span> {{ $servicioAnterior->operador->name }}</p>
                 <br>
                 <a href="{{ route('servicios.service', $servicioAnterior->id) }}" class="btn btn-primary">Ver Servicio Anterior</a>
@@ -35,13 +36,14 @@
 
             @if ($servicioSiguiente)
                 <h3 class="text-xl font-semibold mb-4">Servicio Siguiente</h3>
+                <p class="text-sm text-gray-700"><span class="font-bold">ID:</span> {{ $servicioSiguiente->id }}</p>
                 <p class="text-sm text-gray-700"><span class="font-bold">Notas:</span> {{ $servicioSiguiente->solicitud->notas_operador ?? 'N/A' }}</p>
-                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{ $servicioSiguiente->fecha_realizacion->format('d/m/Y H:i:s') }}</p>
-                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioSiguiente->valor_kilometraje }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Fecha:</span> {{  optional($servicioSiguiente->fecha_realizacion)->format('d/m/Y H:i:s') }}</p>
+                <p class="text-sm text-gray-700"><span class="font-bold">Kilometraje:</span> {{ $servicioSiguiente->valor_kilometraje ?? 'N/A' }}</p>
                 <p class="text-sm text-gray-700"><span class="font-bold">Operador:</span> {{ $servicioSiguiente->operador->name }}</p>
                 <br>
                 <a href="{{ route('servicios.service', $servicioSiguiente->id) }}" class="btn btn-primary">Ver Servicio Siguiente</a>
-            @endif
+            @endif 
         @endif
 
         <div class="space-y-4">

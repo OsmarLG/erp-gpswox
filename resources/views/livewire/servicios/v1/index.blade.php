@@ -34,7 +34,8 @@
         @scope('actions', $servicio)
             <div class="flex gap-2">
                 <x-button icon="o-pencil" wire:click="editServicio({{ $servicio->id }})" spinner class="btn-sm" />
-                <x-button icon="o-trash" wire:click="deleteServicio({{ $servicio->id }})" spinner class="btn-sm" />
+                <x-button icon="o-trash" class="btn-sm" spinner x-data
+                    x-on:click.prevent="if (confirm('¿Estás seguro de eliminar este servicio?')) { $wire.deleteServicio({{ $servicio->id }}) }" />
             </div>
         @endscope
 

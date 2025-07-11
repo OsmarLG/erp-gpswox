@@ -71,7 +71,8 @@
             <div class="flex gap-2">
                 <x-button icon="o-eye" wire:click="viewUser({{ $user->id }})" spinner class="btn-sm" />
                 <x-button icon="o-pencil" wire:click="editUser({{ $user->id }})" spinner class="btn-sm" />
-                <x-button icon="o-trash" wire:click="deleteUser({{ $user->id }})" spinner class="btn-sm" />
+                <x-button icon="o-trash" class="btn-sm" spinner x-data
+                    x-on:click.prevent="if (confirm('¿Estás seguro de eliminar este usuario?')) { $wire.deleteUser({{ $user->id }}) }" />
             </div>
         @endscope
 

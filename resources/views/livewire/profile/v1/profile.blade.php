@@ -54,14 +54,14 @@
                 <x-input label="Celular 1" wire:model="celular1" icon-right="o-phone" />
                 <x-input label="Celular 2" wire:model="celular2" icon-right="o-phone" />
                 <x-input label="Teléfono de casa" wire:model="telefono_casa" icon-right="o-phone" />
-                <x-input label="Contacto con quien vive" wire:model="nombre_contacto_con_quien_vive" />
+                {{-- <x-input label="Nombre con quien vive" wire:model="nombre_contacto_con_quien_vive" /> --}}
                 <x-input label="Código Postal" wire:model="cp_domicilio" />
 
-                <x-input label="Contacto de emergencia nombre" wire:model="contacto_emergencia_nombre" />
-                <x-input label="Contacto de emergencia teléfono" wire:model="contacto_emergencia_telefono" />
-                <x-input label="Link Google Maps" wire:model="link_google_maps" />
+                <x-input label="Nombre Con Quien Vive" wire:model="contacto_emergencia_nombre" />
+                <x-input label="Telefono Con Quien Vive" wire:model="contacto_emergencia_telefono" />
+                <x-input label="Link Google Maps (Domicilio)" wire:model="link_google_maps" />
                 <x-input label="Perfil Uber" wire:model="perfil_uber" />
-                <x-input label="Datos Uber" wire:model="datos_uber" />
+                <x-input label="Telefono Uber" wire:model="datos_uber" />
 
                 <br>
 

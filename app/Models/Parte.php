@@ -32,6 +32,14 @@ class Parte extends Model
     public function archivos()
     {
         return $this->hasManyThrough(VehicleRequestArchivo::class, VehicleRequest::class, 'parte_id', 'vehicle_request_id')
-            ->orderBy('vehicle_request_archivos.created_at', 'desc')->take(5);
+            ->orderBy('vehicle_request_archivos.created_at', 'desc');
+    }
+
+    public function archivosDelVehiculo($vehicleId)
+    {
+        return $this->hasManyThrough(VehicleRequestArchivo::class, VehicleRequest::class, 'parte_id', 'vehicle_request_id')
+            ->where('vehicle_request_archivos.vehicle_id', $vehicleId)
+            ->orderBy('vehicle_request_archivos.created_at', 'desc')
+            ->limit(5);
     }
 }

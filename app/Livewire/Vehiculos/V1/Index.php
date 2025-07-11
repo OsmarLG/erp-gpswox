@@ -45,13 +45,13 @@ class Index extends Component
 
     // Cabeceras de la tabla
     public array $headers = [
-        ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
+        // ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
         ['key' => 'nombre_unidad', 'label' => 'Nombre Unidad', 'class' => 'text-black dark:text-white'],
         ['key' => 'placa', 'label' => 'Placa', 'class' => 'text-black dark:text-white'],
         ['key' => 'tipo_marca', 'label' => 'Tipo/Marca', 'class' => 'text-black dark:text-white'],
         ['key' => 'operador.name', 'label' => 'Operador', 'class' => 'text-black dark:text-white'],
         ['key' => 'KilometrajeGpswox', 'label' => 'Odometro', 'class' => 'text-black dark:text-white'],
-        ['key' => 'gpswox_id', 'label' => 'ID GPSWOX', 'class' => 'text-black dark:text-white'],
+        // ['key' => 'gpswox_id', 'label' => 'ID GPSWOX', 'class' => 'text-black dark:text-white'],
     ];
     public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
 

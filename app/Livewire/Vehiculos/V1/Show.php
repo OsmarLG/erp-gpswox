@@ -71,6 +71,12 @@ class Show extends Component
     public $imei_gps2;
     public $vigencia_gps2;
     public $saldo_gps2;
+    public $asegurado;
+    public $comentarios_seguro;
+    public $tarjeta_estado;
+    public $nombre_tarjeta;
+    public $marca_bateria;
+    public $comentarios_gps;
 
     public $vehicleFields = [
         'nombre_unidad',
@@ -102,7 +108,13 @@ class Show extends Component
         'tel_gps2',
         'imei_gps2',
         'vigencia_gps2',
-        'saldo_gps2'
+        'saldo_gps2',
+        'asegurado',
+        'comentarios_seguro',
+        'tarjeta_estado',
+        'nombre_tarjeta',
+        'marca_bateria',
+        'comentarios_gps',
     ];
 
     public $notas_operador;
@@ -154,6 +166,12 @@ class Show extends Component
         $this->imei_gps2 = $vehiculo->imei_gps2;
         $this->vigencia_gps2 = $vehiculo->vigencia_gps2;
         $this->saldo_gps2 = $vehiculo->saldo_gps2;
+        $this->asegurado = $vehiculo->asegurado;
+        $this->comentarios_seguro = $vehiculo->comentarios_seguro;
+        $this->tarjeta_estado = $vehiculo->tarjeta_estado;
+        $this->nombre_tarjeta = $vehiculo->nombre_tarjeta;
+        $this->marca_bateria = $vehiculo->marca_bateria;
+        $this->comentarios_gps = $vehiculo->comentarios_gps;
 
         foreach ($this->vehicleFields as $field) {
             $this->{$field} = $vehiculo->{$field};
@@ -169,26 +187,29 @@ class Show extends Component
         $this->odometerValue = collect($response[0]['items'][0]['sensors'] ?? [])
             ->firstWhere('type', 'odometer')['val'] ?? null;
 
-        // Buscar si ya existe el registro
-        $todosLosServicios = Servicio::all();
-        foreach ($todosLosServicios as $servicio) {
-            $vehicleServiceKilometer = VehicleServiceKilometer::where('vehicle_id', $vehiculo->id)
-                ->where('service_id', $servicio->id)
-                ->first();
+        // Solo si hay odómetro válido
+        if (!is_null($this->odometerValue)) {
+            $todosLosServicios = Servicio::all();
 
-            if ($vehicleServiceKilometer) {
-                // Solo actualizar current_km
-                $vehicleServiceKilometer->update([
-                    'current_km' => $this->odometerValue,
-                ]);
-            } else {
-                // Crear registro nuevo
-                VehicleServiceKilometer::create([
-                    'vehicle_id' => $vehiculo->id,
-                    'service_id' => $servicio->id,
-                    'last_km' => $this->odometerValue ?? 0,
-                    'current_km' => $this->odometerValue,
-                ]);
+            foreach ($todosLosServicios as $servicio) {
+                $vehicleServiceKilometer = VehicleServiceKilometer::where('vehicle_id', $vehiculo->id)
+                    ->where('service_id', $servicio->id)
+                    ->first();
+
+                if ($vehicleServiceKilometer) {
+                    // Solo actualizar current_km
+                    $vehicleServiceKilometer->update([
+                        'current_km' => $this->odometerValue,
+                    ]);
+                } else {
+                    // Crear registro nuevo
+                    VehicleServiceKilometer::create([
+                        'vehicle_id' => $vehiculo->id,
+                        'service_id' => $servicio->id,
+                        'last_km' => $this->odometerValue,
+                        'current_km' => $this->odometerValue,
+                    ]);
+                }
             }
         }
 
@@ -469,14 +490,28 @@ class Show extends Component
     {
         $operators = User::whereHas('roles', fn($q) => $q->whereIn('name', ['operador']))->get();
         $serviceRecords = VehicleServiceRecord::where('vehicle_id', $this->vehiculo->id)->orderBy('id', 'desc')->paginate(10);
-        $parts = Parte::with(['categoria', 'files', 'vehicleRequests', 'archivos'])
-            ->orderBy('categoria_id') // Ordena por categoría
+        // $parts = Parte::with(['categoria', 'files', 'vehicleRequests', 'archivos'])
+        //     ->orderBy('categoria_id')
+        //     ->get();
+
+        $parts = Parte::with(['categoria', 'vehicleRequests'])
+            ->get()
+            ->each(function ($parte) {
+                $parte->setRelation('archivos_filtrados', $parte->archivosDelVehiculo($this->vehiculo->id)->get());
+            });
+
+        $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)
+            ->whereIn('status', ['pending', 'initiated'])
             ->get();
 
-        $requests = VehicleRequest::where('vehicle_id', $this->vehiculo->id)->whereIn('status', ['pending', 'initiated'])->get();
-
-        return view('livewire.vehiculos.v1.show', compact('serviceRecords', 'operators', 'parts', 'requests'));
+        return view('livewire.vehiculos.v1.show', compact(
+            'serviceRecords',
+            'operators',
+            'parts',
+            'requests'
+        ));
     }
+
 
     public function storeServiceRecord()
     {

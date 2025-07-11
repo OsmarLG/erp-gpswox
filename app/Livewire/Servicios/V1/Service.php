@@ -35,23 +35,18 @@ class Service extends Component
             ->where('vehicle_id', $this->servicio->vehicle_id)
             ->where('service_id', $this->servicio->service_id)
             ->where('status', 'completed')
-            ->where('id', '!=', $this->servicio->id)
-            ->when(!is_null($this->servicio->fecha_realizacion), function ($query) {
-                $query->where('fecha_realizacion', '<', $this->servicio->fecha_realizacion);
-            })
-            ->orderBy('fecha_realizacion', 'desc')
+            ->where('id', '<', $this->servicio->id)
+            ->orderBy('id', 'desc')
             ->first();
 
-        // Servicio Siguiente
+
+        // // Servicio Siguiente
         $this->servicioSiguiente = VehicleServiceRecord::query()
             ->where('vehicle_id', $this->servicio->vehicle_id)
             ->where('service_id', $this->servicio->service_id)
             ->where('status', 'completed')
-            ->where('id', '!=', $this->servicio->id)
-            ->when(!is_null($this->servicio->fecha_realizacion), function ($query) {
-                $query->where('fecha_realizacion', '>', $this->servicio->fecha_realizacion);
-            })
-            ->orderBy('fecha_realizacion', 'asc')
+            ->where('id', '>', $this->servicio->id)
+            ->orderBy('id', 'asc')
             ->first();
 
         // $ultimoServicioTabla = VehicleServiceRecord::where('status', 'completed')

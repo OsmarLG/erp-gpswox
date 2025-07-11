@@ -25,15 +25,16 @@
     <x-table :headers="$headers" :rows="$vehicles" :sort-by="$sortBy" striped with-pagination>
 
         @scope('cell_KilometrajeGpswox', $vehiculo)
-        {{ $vehiculo->kilometraje_gpswox ? number_format($vehiculo->kilometraje_gpswox, 0, '.', ',') . ' Km' : 'N/A' }}
-        @endscope   
+            {{ $vehiculo->kilometraje_gpswox ? number_format($vehiculo->kilometraje_gpswox, 0, '.', ',') . ' Km' : 'N/A' }}
+        @endscope
 
         {{-- Sobrescribe las acciones --}}
         @scope('actions', $vehiculo)
             <div class="flex gap-2">
                 <x-button icon="o-eye" wire:click="viewVehiculo({{ $vehiculo->id }})" spinner class="btn-sm" />
                 <x-button icon="o-pencil" wire:click="editVehiculo({{ $vehiculo->id }})" spinner class="btn-sm" />
-                <x-button icon="o-trash" wire:click="deleteVehiculo({{ $vehiculo->id }})" spinner class="btn-sm" />
+                <x-button icon="o-trash" class="btn-sm" spinner x-data
+                    x-on:click.prevent="if (confirm('¿Estás seguro de eliminar este vehículo?')) { $wire.deleteVehiculo({{ $vehiculo->id }}) }" />
             </div>
         @endscope
 
@@ -56,7 +57,7 @@
             <x-input label="No. Tarjeta de Circulación" wire:model="no_tarjeta_circulacion"
                 placeholder="Tarjeta de Circulación" />
             <x-datetime label="Vigencia Tarjeta" wire:model="vigencia_tarjeta" icon="o-calendar" />
-            <x-input label="TAG Número" wire:model="tag_numero" placeholder="TAG Número" clearable />
+            <x-input label="TAG Caseta" wire:model="tag_numero" placeholder="TAG Caseta" clearable />
             <x-input label="TAG Gasolina" wire:model="tag_gasolina_id" placeholder="TAG Gasolina" clearable />
             <x-datetime label="Verificación Vencimiento" wire:model="verificacion_vencimiento" icon="o-calendar" />
 
@@ -83,7 +84,7 @@
             <x-input label="No. Tarjeta de Circulación" wire:model="no_tarjeta_circulacion"
                 placeholder="Tarjeta de Circulación" />
             <x-datetime label="Vigencia Tarjeta" wire:model="vigencia_tarjeta" icon="o-calendar" />
-            <x-input label="TAG Número" wire:model="tag_numero" placeholder="TAG Número" clearable />
+            <x-input label="TAG Caseta" wire:model="tag_numero" placeholder="TAG Caseta" clearable />
             <x-input label="TAG Gasolina" wire:model="tag_gasolina_id" placeholder="TAG Gasolina" clearable />
             <x-datetime label="Verificación Vencimiento" wire:model="verificacion_vencimiento" icon="o-calendar" />
             <x-checkbox label="Obtener datos de GPSWOX" wire:model="get_datos_gpswox" />

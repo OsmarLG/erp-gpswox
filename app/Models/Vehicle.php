@@ -45,6 +45,12 @@ class Vehicle extends Model
         'vigencia_gps2',
         'saldo_gps2',
         'get_datos_gpswox',
+        'asegurado',
+        'comentarios_seguro',
+        'tarjeta_estado',
+        'nombre_tarjeta',
+        'marca_bateria',
+        'comentarios_gps',
     ];
 
     protected $casts = [
