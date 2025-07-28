@@ -228,7 +228,7 @@ class Show extends Component
             $value = $this->{$field};
 
             // Si el campo es saldo_gps1 o saldo_gps2 y viene vacío, cámbialo a null o 0.0
-            if (in_array($field, ['saldo_gps1', 'saldo_gps2']) && $value === '') {
+            if (in_array($field, ['saldo_gps1', 'saldo_gps2', 'tel_gps1', 'tel_gps2', 'imei_gps1', 'imei_gps2', 'vigencia_gps1', 'vigencia_gps2']) && $value === '') {
                 $data[$field] = null; // o 0.0 si prefieres guardar ceros
             } else {
                 $data[$field] = $value;
