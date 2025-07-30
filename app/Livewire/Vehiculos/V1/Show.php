@@ -249,7 +249,7 @@ class Show extends Component
 
     public function uploadEvidence($partId)
     {
-        dd($partId, auth()->user(), $this->files, auth()->user()->roles->pluck('name')->toArray());
+        // dd($partId, auth()->user(), $this->files, auth()->user()->roles->pluck('name')->toArray());
 
         if (!auth()->user()->hasRole(['master', 'admin'])) {
             return abort(403);
