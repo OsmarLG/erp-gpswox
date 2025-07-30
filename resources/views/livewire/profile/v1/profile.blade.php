@@ -7,8 +7,9 @@
     <div class="flex items-center space-x-4">
         <div class="relative group">
             <?php
-            $initials = collect(explode(' ', $user->name))
-                ->map(fn($word) => strtoupper($word[0]))
+            $initials = collect(explode(' ', trim($user->name))) // elimina espacios al inicio/final
+                ->filter() // elimina cadenas vacías
+                ->map(fn($word) => strtoupper($word[0] ?? '')) // previene error si la palabra está vacía
                 ->implode('');
             ?>
 
@@ -22,6 +23,7 @@
                 class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition text-white rounded-full"
                 wire:click="openUpdateAvatarModal" />
         </div>
+
 
         <div>
             <h3 class="text-xl font-semibold text-primary">{{ $name }}</h3>
@@ -71,17 +73,18 @@
                     <template x-if="isMobile">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                             @foreach ([
-                                'ine_frontal_file' => 'INE (Frontal)',
-                                'ine_reverso_file' => 'INE (Reverso)',
-                                'licencia_frontal_file' => 'Licencia (Frontal)',
-                                'licencia_reverso_file' => 'Licencia (Reverso)',
-                                'comprobante_domicilio_file' => 'Comprobante de Domicilio',
-                                'foto_fachada_file' => 'Foto de Fachada',
-                                'foto_estacionamiento_file' => 'Foto de Estacionamiento'
-                            ] as $field => $label)
+        'ine_frontal_file' => 'INE (Frontal)',
+        'ine_reverso_file' => 'INE (Reverso)',
+        'licencia_frontal_file' => 'Licencia (Frontal)',
+        'licencia_reverso_file' => 'Licencia (Reverso)',
+        'comprobante_domicilio_file' => 'Comprobante de Domicilio',
+        'foto_fachada_file' => 'Foto de Fachada',
+        'foto_estacionamiento_file' => 'Foto de Estacionamiento',
+    ] as $field => $label)
                                 <div>
                                     <x-file wire:model="{{ $field }}" label="{{ $label }}"
-                                        accept="image/png, image/jpg, image/jpeg" capture="environment" crop-after-change>
+                                        accept="image/png, image/jpg, image/jpeg" capture="environment"
+                                        crop-after-change>
                                         <div class="w-60 h-60 bg-black flex items-center justify-center rounded-lg">
                                             <img src="{{ $$field
                                                 ? $$field->temporaryUrl()
@@ -141,10 +144,12 @@
         </button>
     </form>
 
-    <x-modal wire:model="update_avatar_modal" title="Actualizar Avatar" subtitle="Selecciona y recorta tu nueva imagen" separator>
+    <x-modal wire:model="update_avatar_modal" title="Actualizar Avatar" subtitle="Selecciona y recorta tu nueva imagen"
+        separator>
         <x-form wire:submit.prevent="saveAvatar">
             <div class="flex justify-center">
-                <x-file wire:model="newAvatar" accept="image/png, image/jpg, image/jpeg" capture="user" crop-after-change>
+                <x-file wire:model="newAvatar" accept="image/png, image/jpg, image/jpeg" capture="user"
+                    crop-after-change>
                     <div class="w-40 h-40 rounded-full bg-black flex items-center justify-center">
                         <img src="{{ $newAvatar ? $newAvatar->temporaryUrl() : ($user->avatar ? asset('storage/' . $user->avatar) : asset('storage/user.png')) }}"
                             class="w-full h-full object-cover rounded-full" />
@@ -161,7 +166,8 @@
     <x-modal wire:model="viewImageModal" max-width="full" class="!max-w-full !h-screen !rounded-none p-0">
         <div class="relative w-full h-full flex items-center justify-center bg-black bg-opacity-90">
             @if ($viewImageModalUrl)
-                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa" class="max-w-full max-h-full object-contain" />
+                <img src="{{ $viewImageModalUrl }}" alt="Vista Previa"
+                    class="max-w-full max-h-full object-contain" />
             @endif
         </div>
     </x-modal>
