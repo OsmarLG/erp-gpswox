@@ -65,12 +65,10 @@
                                 <x-avatar :image="asset('storage/' . $user->avatar)" class="!w-10" />
                             @else
                                 <?php
-                                $words = explode(' ', $user->name);
-                                
-                                $initials = '';
-                                foreach ($words as $word) {
-                                    $initials .= strtoupper($word[0]);
-                                }
+                                $initials = collect(explode(' ', trim($user->name)))
+                                    ->filter()
+                                    ->map(fn($w) => strtoupper($w[0] ?? ''))
+                                    ->implode('');
                                 ?>
                                 <x-avatar placeholder="{{ $initials }}" class="!w-10" />
                             @endif
@@ -110,16 +108,19 @@
                         <x-menu-sub title="Vehículos" icon="o-truck">
                             <x-menu-item title="Catalogo" icon="o-truck" link="{{ route('vehiculos.index') }}" />
                             <x-menu-sub title="Partes" icon="o-clipboard-document-list">
-                                <x-menu-item title="Catalogo" icon="o-clipboard-document-list" link="{{ route('partes.index') }}" />
-                                <x-menu-item title="Categorias" icon="o-cube" link="{{ route('categorias.index') }}" />
-                            </x-menu-sub    >
+                                <x-menu-item title="Catalogo" icon="o-clipboard-document-list"
+                                    link="{{ route('partes.index') }}" />
+                                <x-menu-item title="Categorias" icon="o-cube"
+                                    link="{{ route('categorias.index') }}" />
+                            </x-menu-sub>
                         </x-menu-sub>
                     @endif
                     @if ($user->hasPermissionTo('view_menu_servicio'))
                         <x-menu-item title="Servicios" icon="o-wrench" link="{{ route('servicios.index') }}" />
                     @endif
                     @if ($user->hasRole('operador') && $user->vehiculo)
-                        <x-menu-item title="Solicitar Servicio" icon="o-wrench" link="{{ route('servicios.create') }}" />
+                        <x-menu-item title="Solicitar Servicio" icon="o-wrench"
+                            link="{{ route('servicios.create') }}" />
                     @endif
                     @if ($user->hasPermissionTo('view_menu_users'))
                         <x-menu-sub title="Users" icon="o-users">
