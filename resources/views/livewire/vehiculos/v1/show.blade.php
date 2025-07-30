@@ -12,18 +12,20 @@
         <div class="flex items-center space-x-4 mb-6">
             <div class="relative group">
                 @php
-                    // Generar iniciales
-                    $initials = collect(explode(' ', $vehiculo->operador->name))
-                        ->map(fn($word) => strtoupper($word[0]))
+                    // Generar iniciales de forma segura
+                    $initials = collect(explode(' ', trim($vehiculo->operador->name ?? '')))
+                        ->filter() // quita palabras vacías (espacios múltiples o extremos)
+                        ->map(fn($word) => strtoupper($word[0] ?? '')) // previene error si la palabra está vacía
                         ->implode('');
                 @endphp
 
-                @if ($vehiculo->operador->avatar ?? false)
+                @if (!empty($vehiculo->operador->avatar))
                     <x-avatar :image="asset('storage/' . $vehiculo->operador->avatar)" class="!w-24 !h-24 shadow-lg" />
                 @else
                     <x-avatar placeholder="{{ $initials }}" class="!w-24 !h-24 shadow-lg" />
                 @endif
             </div>
+
 
             <div>
                 <h3 class="text-xl font-semibold text-primary">{{ $vehiculo->operador->name }}</h3>
