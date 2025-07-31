@@ -8,13 +8,14 @@
     <div class="flex items-center space-x-4 mb-6">
         <div class="relative group">
             @php
-                // Generar iniciales
-                $initials = collect(explode(' ', $user->name))
-                    ->map(fn($word) => strtoupper($word[0]))
+                // Generar iniciales de forma segura
+                $initials = collect(explode(' ', trim($user->name ?? '')))
+                    ->filter() // elimina vacíos por múltiples espacios
+                    ->map(fn($word) => strtoupper($word[0] ?? '')) // previene errores de offset
                     ->implode('');
             @endphp
 
-            @if ($user->avatar)
+            @if (!empty($user->avatar))
                 <x-avatar :image="asset('storage/' . $user->avatar)" class="!w-24 !h-24 shadow-lg" />
             @else
                 <x-avatar placeholder="{{ $initials }}" class="!w-24 !h-24 shadow-lg" />
@@ -37,7 +38,8 @@
                     <p><strong>Nombre:</strong> {{ $user->name . ' ' . $user->apellidos }}</p>
                     <p><strong>Username:</strong> {{ $user->username }}</p>
                     <p><strong>Email:</strong> {{ $user->email }}</p>
-                    <p><strong>Fecha de Nacimiento:</strong> {{ optional($user->fecha_nacimiento)?->format('d/m/Y') }}</p>
+                    <p><strong>Fecha de Nacimiento:</strong> {{ optional($user->fecha_nacimiento)?->format('d/m/Y') }}
+                    </p>
                     <p><strong>Edad:</strong> {{ $user->edad . ' años' }}</p>
                     <p><strong>Celular 1:</strong> {{ $user->celular1 }}</p>
                     <p><strong>Celular 2:</strong> {{ $user->celular2 }}</p>
