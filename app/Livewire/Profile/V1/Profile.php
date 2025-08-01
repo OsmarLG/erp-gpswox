@@ -128,13 +128,13 @@ class Profile extends Component
                     'direccion_domicilio' => 'nullable|string|max:255',
                     'ubicacion_domicilio' => 'nullable|string|max:255',
                     // archivos
-                    'ine_frontal_file' => 'nullable|image|max:10000',  // 10MB
-                    'ine_reverso_file' => 'nullable|image|max:10000',
-                    'licencia_frontal_file' => 'nullable|image|max:10000',
-                    'licencia_reverso_file' => 'nullable|image|max:10000',
-                    'comprobante_domicilio_file' => 'nullable|image|max:10000',
-                    'foto_fachada_file' => 'nullable|image|max:10000',
-                    'foto_estacionamiento_file' => 'nullable|image|max:10000',
+                    'ine_frontal_file' => 'nullable|image|max:1000000',  // 1MB
+                    'ine_reverso_file' => 'nullable|image|max:1000000',
+                    'licencia_frontal_file' => 'nullable|image|max:1000000',
+                    'licencia_reverso_file' => 'nullable|image|max:1000000',
+                    'comprobante_domicilio_file' => 'nullable|image|max:1000000',
+                    'foto_fachada_file' => 'nullable|image|max:1000000',
+                    'foto_estacionamiento_file' => 'nullable|image|max:1000000',
 
                     'contacto_emergencia_nombre' => 'nullable|string|max:255',
                     'contacto_emergencia_telefono' => ['nullable', 'regex:/^\+?\d{1,10}$/'],
